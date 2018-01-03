@@ -1,0 +1,19 @@
+.hidden {
+    display: none;
+}
+.highlight-vote {
+    -webkit-box-shadow: inset 0 0 2px 2px #86f442;
+    -moz-box-shadow: inset 0 0 2px 2px #86f442;
+    box-shadow: inset 0 0 2px 2px #86f442;
+}
+.moveChessboard {
+    display:block;
+    position: absolute;
+    background-color: #404040;
+    box-shadow: 4px 2px 4px 2px rgba(0,0,0,0.3);
+}
+.moveName {
+    color: blue;
+    text-decoration: underline;
+    cursor: crosshair;
+}
