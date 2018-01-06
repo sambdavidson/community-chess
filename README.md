@@ -1,5 +1,3 @@
 #Community Chess
 
-##API
-
-`GET /turns`
+##A democratized chess game with the world.
