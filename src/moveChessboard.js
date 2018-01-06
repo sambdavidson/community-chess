@@ -1,6 +1,5 @@
 import React from 'react';
 import Board from 'chessboardjs';
-import ChessGame from 'chess.js';
 import VotingChessboard from './votingChessboard';
 
 /* CSS */
@@ -8,12 +7,27 @@ import 'chessboardjs/www/css/chessboard.css';
 import './moveChessboard.css';
 import $ from "jquery";
 
+const FEN_PIECE_NAMES = {
+    "p": "♟",
+    "n": "♞",
+    "b": "♝",
+    "r": "♜",
+    "q": "♛",
+    "k": "♚",
+    "P": "♙",
+    "N": "♘",
+    "B": "♗",
+    "R": "♖",
+    "Q": "♕",
+    "K": "♔",
+};
+
 class MoveChessboard extends React.Component {
 
     constructor(props) {
         super(props);
-
         this.state = {
+            move: props.game.history({verbose: true}).reverse()[0],
             hovered: false,
             mx: 0,
             my: 0,
@@ -21,17 +35,14 @@ class MoveChessboard extends React.Component {
     }
 
     componentDidMount() {
-        let game = new ChessGame();
-        game.load_pgn(this.props.movePgn);
         const cfg = {
             showNotation: false,
             pieceTheme: VotingChessboard.pieceTheme,
-            position: game.fen(),
+            position: this.props.game.fen(),
             draggable: false
         };
-        let moveCode = this.props.movePgn.split(' ').reverse()[0];
-        this.board = Board('moveChessboard_'+moveCode, cfg);
-        const squareEl = $('#moveChessboard_'+moveCode).find('.square-' + moveCode.slice(-2));
+        this.board = Board('moveChessboard_'+this.state.move.san, cfg);
+        const squareEl = $('#moveChessboard_'+this.state.move.san).find('.square-' + this.state.move.to);
         squareEl.addClass('highlight-vote');
         this.highlightedPiece = squareEl;
         this.highlightedPiece = null;
@@ -54,20 +65,19 @@ class MoveChessboard extends React.Component {
     render() {
         let offset = 20;
         let chessboardSize = 150;
-        let moveCode = this.props.movePgn.split(' ').reverse()[0];
         return (
             <div>
                 <span
                     className={"moveName"}
                     onMouseEnter={(e)=>{this.setHovered(true,e)}}
                     onMouseLeave={(e)=>{this.setHovered(false,e)}}>
-                    {moveCode}
+                    {FEN_PIECE_NAMES[this.state.move.piece.toLowerCase()]} to {this.state.move.to.toUpperCase()}
                 </span>
                 <div className={this.state.hovered ? "moveChessboard" : "hidden"}
                      style={{
                          "left": (this.state.mx + offset) + "px",
                          "top": (this.state.my - (chessboardSize + offset)) + "px"}}>
-                    <div id={"moveChessboard_"+moveCode} style={{"width": chessboardSize + "px"}}>{null}</div>
+                    <div id={"moveChessboard_"+this.state.move.san} style={{"width": chessboardSize + "px"}}>{null}</div>
                 </div>
             </div>
         );

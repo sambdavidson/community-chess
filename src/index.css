@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Playfair+Display|Russo+One');
+@import url('https://fonts.googleapis.com/css?family=Playfair+Display|PT+Mono');
 
 html, body {
     margin:0;
@@ -6,15 +6,23 @@ html, body {
     width:100%;
     font-family: 'Playfair Display', serif;
     font-size: 16px;
+    background-image: url("http://2.bp.blogspot.com/-p_2XDye_UG4/UmpPMNhKc1I/AAAAAAAAEy4/CleBQJoGUD0/s1600/Tileable+marble+floor+tile+texture+(26).jpg");
+    background-size: cover;
+    background-repeat: repeat-y;
+    background-position: 50% 50%;
+    color: #22222f;
+    text-shadow: 0 1px 0 rgba(255,255,255,.5), 0 -1px 0 rgba(0,0,0,1);
 }
 
-h1 {
+#Title {
     text-align: center;
     font-size: 50px;
+    margin-bottom: 20px;
 }
-h3 {
+#TurnInfo {
+    font-weight: bold;
     text-align: center;
-    font-size: 30px;
+    font-size: 20px;
 }
 
 #NextMoveIn {
@@ -23,24 +31,24 @@ h3 {
 }
 
 #NextMoveTimer {
-    position:relative;
+    font-family: 'Source Code Pro', monospace;
+    position: relative;
     top: -20px;
-    font-family: 'Russo One', sans-serif;
+    height: 100px;
     text-align: center;
-    font-size: 36px;
-}
-
-#NextMoveTimer #Number {
-
-    font-size: 110px;
+    font-size: 100px;
 }
 
 #GameColumns {
     width: 100%;
+    display: table;
+    table-layout: fixed;
+    border-collapse: collapse;
 }
 
 #GameColumns .column {
+    display:table-column;
     text-align: center;
-    width: 33.3333333%;
+    width: 33.33333%;
     float:left;
 }

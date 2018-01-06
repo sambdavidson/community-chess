@@ -13,27 +13,31 @@ class Game extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            userId: 'user',
             windowWidth: window.innerWidth,
-            turnCount: 1,
-            playerUp: 'w',
-            turnInfo: {
+            gameState: {
                 pgn: '',
                 votePgn: null,
                 endTimeMs: 0
             }
         };
-        this.pendingVote = false;
         this.game = new ChessGame();
         this.resizeHandler = ()=>{this.setState({windowWidth: window.innerWidth})};
     }
 
-    componentDidUpdate() {
-    }
-
     componentDidMount() {
         API.gameState.subscribe(gameState => {
-            this.pendingVote = false;
+            let change = false;
+            for(let prop in this.state.gameState) {
+                if(this.state.gameState.hasOwnProperty(prop)) {
+                    if(gameState[prop] !== this.state.gameState[prop]) {
+                        change = true;
+                        break;
+                    }
+                }
+            }
+            if (!change) {
+                return;
+            }
             this.game.reset();
             if (gameState.votePgn) {
                 this.game.load_pgn(gameState.votePgn);
@@ -41,14 +45,12 @@ class Game extends React.Component {
                 this.game.load_pgn(gameState.pgn);
             }
 
-            let serverGame = new ChessGame();
-            serverGame.load_pgn(this.state.turnInfo.pgn);
-            let fenFields = serverGame.fen().split(' ');
-
             this.setState({
-                turnInfo: gameState,
-                turnCount: fenFields[5],
-                playerUp: fenFields[1] === 'w' ? 'White' : 'Black'
+                gameState: {
+                    pgn: gameState.pgn,
+                    votePgn: gameState.votePgn,
+                    endTimeMs: gameState.endTimeMs
+                },
 
             });
         });
@@ -56,33 +58,45 @@ class Game extends React.Component {
     }
 
     castVoteToAPI(pgn) {
-        this.pendingVote = true;
         this.setState({
-            turnInfo: {
-                pgn: this.state.turnInfo.pgn,
+            gameState: {
+                pgn: this.state.gameState.pgn,
                 votePgn: pgn,
-                endTimeMs: this.state.turnInfo.endTimeMs
+                endTimeMs: this.state.gameState.endTimeMs
             }
         });
-        API.castVote(this.state.userId, pgn);
+        API.castVote(pgn);
     }
 
-    voteMessage() {
-        if (this.pendingVote) {
-            return "Submitting vote."
-        } else if(this.state.turnInfo.votePgn) {
-            return "Voted."
-        } else
-        return "Vote on a move."
+    resetVote() {
+        alert('TODO: Reset Vote');
     }
 
     render() {
+        let voteMessage;
+        if (this.state.gameState.votePgn) {
+            voteMessage = <a onClick={this.resetVote} style={{"cursor" : "pointer"}}>(Reset Vote)</a>;
+        } else {
+            voteMessage = '';
+        }
+
+        let turnMessage;
+        if (this.state.gameState.endTimeMs === 0) {
+            turnMessage = '';
+        } else {
+            if(this.state.gameState.votePgn) {
+                turnMessage = this.game.turn() === 'b' ? 'White\'s Turn' : 'Black\'s Turn';
+            } else {
+                turnMessage = this.game.turn() === 'w' ? 'White\'s Turn' : 'Black\'s Turn';
+            }
+        }
+
         return (
             <div>
-                <h1>Community Chess</h1>
-                <h3>Turn {this.state.turnCount} - {this.state.playerUp}</h3>
+                <div id="Title">Community Chess</div>
                 <div id="NextMoveIn">Next move in</div>
-                <Countdown endTimeMs={this.state.turnInfo.endTimeMs}/>
+                <Countdown endTimeMs={this.state.gameState.endTimeMs}/>
+                <div id="TurnInfo">{turnMessage}</div>
                 <div id="GameColumns">
                     <div className="column">
                         <h2>Next Moves</h2>
@@ -91,11 +105,11 @@ class Game extends React.Component {
                     <div className="column">
                         <h2>Board</h2>
                         <VotingChessboard
-                            width={(this.state.windowWidth/3) - 100}
+                            width={(this.state.windowWidth/3) - 20}
                             game={this.game}
-                            vote={this.state.turnInfo.votePgn}
+                            vote={this.state.gameState.votePgn}
                             onVoteCast={this.castVoteToAPI.bind(this)}/>
-                        <div>{this.voteMessage()}</div>
+                        {voteMessage}
                     </div>
                     <div className="column">
                         <h2>Discussions</h2>

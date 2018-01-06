@@ -42,11 +42,13 @@ class VotingChessboard extends React.Component {
 
 
     componentDidUpdate() {
+        // TODO: Solve weird flickering when voting sometimes.
         this.board.resize();
         this.board.position(this.props.game.fen());
 
         // Must come after a resize
         if(this.props.vote) {
+
             if(this.highlightedPiece) {
                 this.highlightedPiece.removeClass('highlight-vote');
             }

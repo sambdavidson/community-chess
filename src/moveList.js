@@ -1,5 +1,6 @@
 import React from 'react';
 import API from './api';
+import ChessGame from 'chess.js';
 import MoveChessboard from './moveChessboard';
 
 import './moveList.css';
@@ -30,11 +31,12 @@ class MoveList extends React.Component {
     }
 
     render() {
-
         const movesElements = this.state.moveList.map((move) => {
+            const game = new ChessGame();
+            game.load_pgn(move.pgn);
             return (
                 <tr key={move.pgn}>
-                    <td><MoveChessboard movePgn={move.pgn} /></td>
+                    <td><MoveChessboard game={game}/></td>
                     <td>{move.votes}</td>
                     <td>{Math.floor((move.votes / this.state.totalVotes) * 100)}%</td>
                 </tr>

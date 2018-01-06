@@ -11,14 +11,30 @@ class API {
         /** @private {Observer}*/
         this.gameStateEm = null;
 
+        this.id = null;
+
+        fetch('id', {
+            method: 'GET',
+            accept: 'application/json'
+        }).then((response)=>{
+            if(response.ok) {
+                return response.text();
+            }
+        }).then((text)=>{
+            this.id = text;
+        });
+
         //TODO: Clean this up so it doesn't happen multiple times on subscriptions.
-        this.gameState =  Rx.Observable.interval(1000).switchMap(() => {
-            return Rx.Observable.ajax({url: 'gameState', responseType: 'json', method: 'GET'});
+        this.gameState =  Rx.Observable.interval(1000).startWith(0).switchMap(() => {
+            const id = this.id ? this.id : '';
+            return Rx.Observable.ajax({url: `gameState/${this.id}`, responseType: 'json', method: 'GET'});
         }).pluck('response').share();
     }
 
-    castVote(id, pgn) {
-        // ID unused for now. IP is used as the ID.
+    castVote(pgn) {
+        if(!this.id) {
+            return;
+        }
 
         const data = new FormData();
         data.append('json', JSON.stringify({pgn: pgn}));
@@ -28,7 +44,10 @@ class API {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({pgn: pgn})
+            body: JSON.stringify({
+                id: this.id,
+                pgn: pgn
+            })
         }).then((response) => {
             if(!response.ok){
                 console.error(response);
