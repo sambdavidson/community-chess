@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const uuidv1 = require('uuid/v1');
-const Chess = require('./node_modules/chess.js/chess').Chess;
+const Chess = require('chess.js/chess').Chess;
 
 const app = express();
 app.use(express.static(path.join(__dirname, 'build')));
@@ -11,9 +11,10 @@ app.use(bodyParser.json());
 const game = new Chess();
 
 let turnTimeout = null;
-let turnLengthSeconds = 20;
+let turnLengthSeconds = 30;
 let userVotes = {};
 let votedMoves = {};
+let history = [];
 let totalVotes = 0;
 
 /**
@@ -40,6 +41,8 @@ function applyTurn() {
     if(topMove) {
         game.reset();
         game.load_pgn(topMove.pgn);
+        topMove.winner = true;
+        history.push(votedMoves);
         votedMoves = {};
         userVotes = {};
         totalVotes = 0;
@@ -69,13 +72,16 @@ function validateMove(pgn) {
 
 app.set('port', process.env.PORT || 3001);
 
-app.get('/gameState/:id', (req, res) => {
-    const userVote = userVotes[req.params.id];
+app.get('/gameState/:id?', (req, res) => {
+    let userVote = null;
+    if(req.params.id) {
+        userVote = userVotes[req.params.id];
+    }
 
     let votes = [];
     for (let pgn in votedMoves) {
         if (votedMoves.hasOwnProperty(pgn)) {
-            votes.push({pgn: pgn, votes: votedMoves[pgn].votes});
+            votes.push({pgn: pgn, votes: votedMoves[pgn].votes, winner: false});
         }
     }
     res.json({
@@ -101,7 +107,7 @@ app.post('/vote', (req, res) => {
             votedMoves[vote.pgn].votes++
         } else {
             // TODO: weird prop/pgn redundancy
-            votedMoves[vote.pgn] = {votes: 1, pgn: vote.pgn};
+            votedMoves[vote.pgn] = {votes: 1, pgn: vote.pgn, winner: false};
         }
         totalVotes++;
     }
@@ -114,6 +120,13 @@ app.get('/', (req,res)=> {
 
 app.get('/id', (req, res)=> {
    res.send(uuidv1());
+});
+app.get('/history/:start?', (req, res) => {
+    let start = 0;
+    if(req.params.start && !isNaN(parseInt(req.params.start))) {
+        start = parseInt(req.params.start);
+    }
+    res.json(history.slice(start));
 });
 
 app.get('/reset', (req,res)=> {

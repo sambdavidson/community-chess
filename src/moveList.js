@@ -35,25 +35,28 @@ class MoveList extends React.Component {
             const game = new ChessGame();
             game.load_pgn(move.pgn);
             return (
-                <tr key={move.pgn}>
-                    <td><MoveChessboard game={game}/></td>
+                <tr key={move.pgn} className={(move.winner ? 'winning-move' : '')}>
                     <td>{move.votes}</td>
+                    <td><MoveChessboard game={game}/></td>
                     <td>{Math.floor((move.votes / this.state.totalVotes) * 100)}%</td>
                 </tr>
             )
         });
 
         return (
-            <table id={"moveList"}>
-                <tbody>
+            <div id="MoveList">
+                <table cellPadding={10} cellSpacing={0}>
+                    <tbody>
                     <tr>
-                        <th>Move</th>
                         <th>Votes</th>
+                        <th>Move</th>
                         <th>Chance</th>
                     </tr>
                     {movesElements}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+                {/*<div id="MoveHistoryButtons">1 2 3 4</div>*/}
+            </div>
         );
     }
 }

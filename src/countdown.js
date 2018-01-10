@@ -16,7 +16,7 @@ class Countdown extends React.Component {
 
     render() {
         return (
-            <div id="NextMoveTimer"><span id="Number">{this.state.diffSeconds}</span></div>
+            <span id="Number">{this.state.diffSeconds}</span>
         );
     }
 }

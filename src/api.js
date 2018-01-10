@@ -27,7 +27,7 @@ class API {
         //TODO: Clean this up so it doesn't happen multiple times on subscriptions.
         this.gameState =  Rx.Observable.interval(1000).startWith(0).switchMap(() => {
             const id = this.id ? this.id : '';
-            return Rx.Observable.ajax({url: `gameState/${this.id}`, responseType: 'json', method: 'GET'});
+            return Rx.Observable.ajax({url: `gameState/${id}`, responseType: 'json', method: 'GET'});
         }).pluck('response').share();
     }
 
@@ -52,6 +52,15 @@ class API {
             if(!response.ok){
                 console.error(response);
             }
+        });
+    }
+
+    getHistory() {
+        fetch('history', {
+            method: 'GET',
+            accept: 'application/json'
+        }).then((response) => {
+            console.log(response);
         });
     }
 

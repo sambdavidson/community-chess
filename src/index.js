@@ -5,6 +5,7 @@ import Countdown from './countdown';
 import VotingChessboard from './votingChessboard';
 import API from './api';
 import MoveList from './moveList';
+import favicon from './community-chess.png';
 
 import './index.css';
 
@@ -13,7 +14,10 @@ class Game extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            windowWidth: window.innerWidth,
+            window: {
+                width: window.innerWidth,
+                height: window.innerHeight,
+            },
             gameState: {
                 pgn: '',
                 votePgn: null,
@@ -21,7 +25,7 @@ class Game extends React.Component {
             }
         };
         this.game = new ChessGame();
-        this.resizeHandler = ()=>{this.setState({windowWidth: window.innerWidth})};
+        this.resizeHandler = ()=>{this.setState({window: {width: window.innerWidth, height: window.innerHeight}})};
     }
 
     componentDidMount() {
@@ -69,7 +73,7 @@ class Game extends React.Component {
     }
 
     resetVote() {
-        alert('TODO: Reset Vote');
+        alert('Not yet implemented, sorry.\n\nIt will be okay, your vote wasn\'t that bad. :)');
     }
 
     render() {
@@ -91,12 +95,19 @@ class Game extends React.Component {
             }
         }
 
+        const chessboardSize = (Math.min(this.state.window.width, this.state.window.height)/2);
+
         return (
             <div>
-                <div id="Title">Community Chess</div>
-                <div id="NextMoveIn">Next move in</div>
-                <Countdown endTimeMs={this.state.gameState.endTimeMs}/>
-                <div id="TurnInfo">{turnMessage}</div>
+                <div id="Header">
+                    <a id="Title"
+                        href="https://github.com/samdamana/community-chess"
+                        rel="noopener noreferrer"
+                        target="_blank"
+                        title="Community Chess on GitHub"><img src={favicon} alt=""/>Community Chess</a>
+                    <span id="NextMoveIn">Next Move</span>
+                    <span id="MoveTimer"><Countdown endTimeMs={this.state.gameState.endTimeMs}/></span>
+                </div>
                 <div id="GameColumns">
                     <div className="column">
                         <h2>Next Moves</h2>
@@ -105,15 +116,12 @@ class Game extends React.Component {
                     <div className="column">
                         <h2>Board</h2>
                         <VotingChessboard
-                            width={(this.state.windowWidth/3) - 20}
+                            width={chessboardSize}
                             game={this.game}
                             vote={this.state.gameState.votePgn}
                             onVoteCast={this.castVoteToAPI.bind(this)}/>
-                        {voteMessage}
-                    </div>
-                    <div className="column">
-                        <h2>Discussions</h2>
-                        <i>Coming soon</i>
+                        <div id="TurnInfo">{turnMessage}</div>
+                        <div>{voteMessage}</div>
                     </div>
                 </div>
             </div>

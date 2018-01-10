@@ -6,37 +6,54 @@ html, body {
     width:100%;
     font-family: 'Playfair Display', serif;
     font-size: 16px;
-    background-image: url("http://2.bp.blogspot.com/-p_2XDye_UG4/UmpPMNhKc1I/AAAAAAAAEy4/CleBQJoGUD0/s1600/Tileable+marble+floor+tile+texture+(26).jpg");
+    background: url("http://2.bp.blogspot.com/-p_2XDye_UG4/UmpPMNhKc1I/AAAAAAAAEy4/CleBQJoGUD0/s1600/Tileable+marble+floor+tile+texture+(26).jpg") no-repeat center center fixed;
     background-size: cover;
-    background-repeat: repeat-y;
-    background-position: 50% 50%;
     color: #22222f;
     text-shadow: 0 1px 0 rgba(255,255,255,.5), 0 -1px 0 rgba(0,0,0,1);
 }
 
-#Title {
+#Header {
+    border-bottom: 2px solid rgba(34,34,47, 0.3);
+    background: rgba(34,34,47, 0.1);
+    width: 100%;
+    height: 58px;
+    align-content: center;
     text-align: center;
-    font-size: 50px;
-    margin-bottom: 20px;
-}
-#TurnInfo {
-    font-weight: bold;
-    text-align: center;
-    font-size: 20px;
-}
-
-#NextMoveIn {
-    text-align: center;
-    font-weight: bold;
+    overflow: hidden;
 }
 
-#NextMoveTimer {
+#Header #Title {
+    position: absolute;
+    text-decoration: none;
+    text-align: left;
+    color: inherit;
+    left: 20px;
+    font-size: 42px;
+}
+#Header #Title img {
+    vertical-align: bottom;
+    height: 52px;
+}
+#Header #NextMoveIn {
+    font-size: 12px;
+    position: absolute;
+    top: 0;
+    right: 20px;
+}
+#Header #MoveTimer {
+    position: absolute;
+    margin: auto;
+    top: 12px;
+    right: 20px;
     font-family: 'Source Code Pro', monospace;
-    position: relative;
-    top: -20px;
-    height: 100px;
     text-align: center;
-    font-size: 100px;
+    font-size: 42px;
+}
+
+#TurnInfo {
+    text-align: center;
+    opacity: .7;
+    font-size: 20px;
 }
 
 #GameColumns {
@@ -49,6 +66,6 @@ html, body {
 #GameColumns .column {
     display:table-column;
     text-align: center;
-    width: 33.33333%;
+    width: 50%;
     float:left;
 }

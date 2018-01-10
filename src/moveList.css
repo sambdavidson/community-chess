@@ -1,10 +1,39 @@
-table {
+#MoveList {
+    border: 1px solid #22222f;
+    position: relative;
+    left: 0;
+    right: 0;
+    margin: auto;
+    width: 70%;
+    overflow: hidden;
+    min-height: 50px;
+    background: rgba(240,240,255, 0.3);
+
+}
+
+#MoveList table {
     display: inline-table;
-    border-width: 1px 0 1px 0;
-    border-style: solid;
-    border-color: black;
-    width: 90%
+    table-layout: auto;
+    width: 100%;
+}
+
+#MoveList #MoveHistoryButtons {
+    font-family: 'Source Code Pro', monospace;
+}
+
+.winning-move {
+    background: #86c58e;
+}
+tbody {
+    filter:none;
+}
+tr, td:last-child{
+    width: 100%;
 }
 th {
+    padding: 0;
+    border-width: 0 0 1px 0;
+    border-style: solid;
+    border-color: black;
     font-weight: bold;
 }

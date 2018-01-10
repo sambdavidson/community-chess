@@ -7,21 +7,6 @@ import 'chessboardjs/www/css/chessboard.css';
 import './moveChessboard.css';
 import $ from "jquery";
 
-const FEN_PIECE_NAMES = {
-    "p": "♟",
-    "n": "♞",
-    "b": "♝",
-    "r": "♜",
-    "q": "♛",
-    "k": "♚",
-    "P": "♙",
-    "N": "♘",
-    "B": "♗",
-    "R": "♖",
-    "Q": "♕",
-    "K": "♔",
-};
-
 class MoveChessboard extends React.Component {
 
     constructor(props) {
@@ -63,23 +48,10 @@ class MoveChessboard extends React.Component {
     }
 
     render() {
-        let offset = 20;
+        //let offset = 20;
         let chessboardSize = 150;
         return (
-            <div>
-                <span
-                    className={"moveName"}
-                    onMouseEnter={(e)=>{this.setHovered(true,e)}}
-                    onMouseLeave={(e)=>{this.setHovered(false,e)}}>
-                    {FEN_PIECE_NAMES[this.state.move.piece.toLowerCase()]} to {this.state.move.to.toUpperCase()}
-                </span>
-                <div className={this.state.hovered ? "moveChessboard" : "hidden"}
-                     style={{
-                         "left": (this.state.mx + offset) + "px",
-                         "top": (this.state.my - (chessboardSize + offset)) + "px"}}>
-                    <div id={"moveChessboard_"+this.state.move.san} style={{"width": chessboardSize + "px"}}>{null}</div>
-                </div>
-            </div>
+            <div id={"moveChessboard_"+this.state.move.san} style={{"width": chessboardSize + "px"}}>{null}</div>
         );
     }
 }
