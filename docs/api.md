@@ -189,6 +189,8 @@ class ChessVote {
 }
 ```
 
+TODO(Casting votes, recieving updated state.)
+
 
 ## Services
 
