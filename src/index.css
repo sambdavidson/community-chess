@@ -6,7 +6,7 @@ html, body {
     width:100%;
     font-family: 'Playfair Display', serif;
     font-size: 16px;
-    background: url("http://2.bp.blogspot.com/-p_2XDye_UG4/UmpPMNhKc1I/AAAAAAAAEy4/CleBQJoGUD0/s1600/Tileable+marble+floor+tile+texture+(26).jpg") no-repeat center center fixed;
+    background: url("granite_bg.jpg") no-repeat center center fixed;
     background-size: cover;
     color: #22222f;
     text-shadow: 0 1px 0 rgba(255,255,255,.5), 0 -1px 0 rgba(0,0,0,1);
@@ -28,26 +28,45 @@ html, body {
     text-align: left;
     color: inherit;
     left: 20px;
-    font-size: 42px;
+    font-size: 34px;
+}
+#Header #Title:hover {
+    text-shadow: 2px 2px 1px rgba(255,255,255,.5), 0 -1px 0 rgba(0,0,0,1);
 }
 #Header #Title img {
-    vertical-align: bottom;
-    height: 52px;
+    vertical-align: middle;
+    height: 48px;
 }
 #Header #NextMoveIn {
     font-size: 12px;
     position: absolute;
+    margin: auto;
+    width: max-content;
     top: 0;
-    right: 20px;
+    right: 0;
+    left: 0;
 }
 #Header #MoveTimer {
     position: absolute;
     margin: auto;
+    width: max-content;
     top: 12px;
-    right: 20px;
+    left: 0;
+    right: 0;
     font-family: 'Source Code Pro', monospace;
     text-align: center;
     font-size: 42px;
+}
+
+#Header #Login {
+    position: absolute;
+    right: 36px;
+    font-size: 20px;
+    top: 14px;
+    cursor: pointer;
+}
+#Header #Login:hover {
+    text-shadow: 2px 2px 1px rgba(255,255,255,.5), 0 -1px 0 rgba(0,0,0,1);
 }
 
 #TurnInfo {

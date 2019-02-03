@@ -1,6 +1,6 @@
 import React from 'react';
-    import ReactDOM from 'react-dom';
-    import ChessGame from 'chess.js';
+import ReactDOM from 'react-dom';
+import ChessGame from 'chess.js';
 import Countdown from './countdown';
 import VotingChessboard from './votingChessboard';
 import API from './api';
@@ -76,6 +76,11 @@ class Game extends React.Component {
         alert('Not yet implemented, sorry.\n\nIt will be okay, your vote wasn\'t that bad. :)');
     }
 
+    login() {
+        alert('Not yet implemented.\n\nLogin with your Google or Twitter account.\n' +
+            'You will need to be logged in to vote.\n\n\nThis will keep cheating to a minimum.')
+    }
+
     render() {
         let voteMessage;
         if (this.state.gameState.votePgn) {
@@ -107,6 +112,7 @@ class Game extends React.Component {
                         title="Community Chess on GitHub"><img src={favicon} alt=""/>Community Chess</a>
                     <span id="NextMoveIn">Next Move</span>
                     <span id="MoveTimer"><Countdown endTimeMs={this.state.gameState.endTimeMs}/></span>
+                    <span id="Login" onClick={this.login}>Login</span>
                 </div>
                 <div id="GameColumns">
                     <div className="column">

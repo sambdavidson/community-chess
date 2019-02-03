@@ -1,6 +1,7 @@
 import React from 'react';
 import $ from 'jquery';
 import Board from 'chessboardjs';
+import ChessGame from 'chess.js';
 
 /* Chess pieces */
 import wP from 'chessboardjs/www/img/chesspieces/alpha/wP.png';
@@ -36,23 +37,31 @@ class VotingChessboard extends React.Component {
             onMouseoutSquare: this.onMouseoutSquare.bind(this),
             onMouseoverSquare: this.onMouseoverSquare.bind(this),
         };
+        this.currentFen = this.props.game.fen();
+        this.votedGame = this.props.vote ? this.props.vote : null;
         this.board = Board('voteChessboard', cfg);
         this.highlightedPiece = null;
     }
 
-
     componentDidUpdate() {
         // TODO: Solve weird flickering when voting sometimes.
         this.board.resize();
-        this.board.position(this.props.game.fen());
+        this.board.position(this.props.game.fen(), false);
 
+        if(this.props.game.fen() !== this.currentFen) {
+            this.currentFen = this.props.game.fen();
+            this.votedGame = null;
+        }
         // Must come after a resize
         if(this.props.vote) {
-
+            console.log('VOTE', this.props.vote);
+            const game = new ChessGame();
+            game.load_pgn(this.props.vote);
+            const votedMove = game.history({verbose: true}).reverse()[0];
             if(this.highlightedPiece) {
                 this.highlightedPiece.removeClass('highlight-vote');
             }
-            const squareEl = $('#voteChessboard').find('.square-' + this.props.vote.slice(-2));
+            const squareEl = $('#voteChessboard').find('.square-' + votedMove.to);
             squareEl.addClass('highlight-vote');
             this.highlightedPiece = squareEl;
         }
