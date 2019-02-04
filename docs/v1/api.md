@@ -10,11 +10,11 @@ Simplified set of all endpoints available to the client. For details on any endp
 | ------ | ----------------------- | ----------------------------------------------------- | --------------------------------- | ----------------- | ---------------------------------- |
 | *      | /login                  | (TODO) Some sort of identity flow for obtaining EUCs. | TODO                              | TODO              | TODO                               |
 | GET    | /players/${PlayerId}    | Get details of player ${PlayerId}                     | [Players Server](#Players-Server) |                   | [PlayerExtended](#Player-Extended) |
-| GET    | /games                  | Collection of publicly available games.               | [MC Server](#mc-server)           |                   | [GamesCollection](#gamecollection) |
+| GET    | /games                  | Collection of publicly available games.               | [MC Server](#mc-server)           |                   | [GamesCollection](#GameCollection) |
 | POST   | /games                  | Create a new game.                                    | [MC Server](#mc-server)           | [IGame](#IGame)     |                                    |
-| GET    | /game/${GameId}         | Description of game ${GameId}.                        | [Game Server](#game-server)       |                   | [GameMetadata](#GameMetadata)      |
+| GET    | /game/${GameId}         | Description of game ${GameId}.                        | [Game Server](#game-server)       |                   | [IGameMetadata](#IGameMetadata)      |
 | POST   | /game/${GameId}/players | Join (add player) at the game ${GameId}.              | [Game Server](#game-server)       | [Player](#Player) |                                    |
-| POST   | /game/${GameId}/vote    | Cast a vote to the game ${GameId}.                    | [Game Server](#game-server)       | [GameVote](#Vote) |                                    |
+| POST   | /game/${GameId}/vote    | Cast a vote to the game ${GameId}.                    | [Game Server](#game-server)       | [IGameVote](#IGameVote) |                                    |
 
 ## Generic Structures
 
@@ -57,54 +57,54 @@ class GamesCollection {
 ### IGame
 Implementations: [Chess](#chess)
 
-Referenced Types: [GameId](#Generic-Aliases), [ChatId](#Generic-Aliases), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [GameMetadata](#GameMetadata), [GameState](#GameState), [Player](#Player)
+Referenced Types: [GameId](#Generic-Aliases), [ChatId](#Generic-Aliases), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [IGameMetadata](#IGameMetadata), [IGameState](#IGameState), [Player](#Player)
 ```Typescript
 interface IGame {
     gameName: string;
     gameId: GameId;
     chatId: ChatId;
     creationTime: Date;
-    metadata: GameMetadata;
-    state: GameState;
+    metadata: IGameMetadata;
+    state: IGameState;
     players: Player[]
 }
 ```
 
-### GameMetadata
+### IGameMetadata
 Implementations: [ChessMetadata](#chessmetadata)
 
-Referenced Types: [GameRules](#GameRules)
+Referenced Types: [IGameRules](#IGameRules)
 ```Typescript
-interface GameMetadata {
+interface IGameMetadata {
     gameName: string;
     version: number;
     title: string;
     publiclyVisible: boolean;
-    rules: GameRules;
+    rules: IGameRules;
 }
 ```
 
-### GameRules
+### IGameRules
 Implementations: [ChessRules](#chessrules)
 
-Referenced Types: [VoteApplication](#VoteApplication)
+Referenced Types: [IVoteApplication](#IVoteApplication)
 ```Typescript
-interface GameRules {
-    voteApplication: VoteApplication;
+interface IGameRules {
+    voteApplication: IVoteApplication;
 }
 ```
 
-### VoteApplication
+### IVoteApplication
 Implementations: [VoteAppliedImmediately](#VoteAppliedImmediately), [VoteAppliedAfterTally](#VoteAppliedAfterTally)
 ```Typescript
-interface VoteApplication {
+interface IVoteApplication {
     voteApplicationName: string;
 }
 ```
 
 ### VoteAppliedImmediately
 ```Typescript
-class VoteAppliedImmediately implements VoteApplication {
+class VoteAppliedImmediately implements IVoteApplication {
     voteApplicationName: string = "voteAppliedImmediately";
 }
 ```
@@ -112,7 +112,7 @@ class VoteAppliedImmediately implements VoteApplication {
 ### VoteAppliedAfterTally
 
 ```Typescript
-class VoteAppliedAfterTally implements VoteApplication {
+class VoteAppliedAfterTally implements IVoteApplication {
     voteApplicationName: string = "voteAppliedAfterTally";
     voteTimeout: number;
     selectionType: SelectionType;
@@ -127,19 +127,19 @@ enum SelectionType {
 }
 ```
 
-### GameState
+### IGameState
 Implementations: [ChessState](#chessstate)
 ```Typescript
-interface GameState {
+interface IGameState {
     gameName: string;
     version: number;
 }
 ```
 
-### GameVote
+### IGameVote
 
 ```Typescript
-interface GameVote {
+interface IGameVote {
     gameName: string;
 }
 ```
@@ -167,9 +167,9 @@ class Chess implements IGame {
 ```
 
 ### ChessMetadata
-Referenced Types: [GameMetadata](#GameMetadata), [ChessRules](#ChessRules)
+Referenced Types: [IGameMetadata](#IGameMetadata), [ChessRules](#ChessRules)
 ```Typescript
-class ChessMetadata implements GameMetadata {
+class ChessMetadata implements IGameMetadata {
     gameName: string = "chess";
     version: number;
     title: string;
@@ -179,18 +179,18 @@ class ChessMetadata implements GameMetadata {
 ```
 
 ### ChessRules
-Referenced Types: [GameRules](#gamerules), [VoteApplication](#VoteApplication)
+Referenced Types: [IGameRules](#gamerules), [IVoteApplication](#IVoteApplication)
 ```Typescript
-class ChessRules implements GameRules {
-    voteApplication: VoteApplication;
+class ChessRules implements IGameRules {
+    voteApplication: IVoteApplication;
     balancedTeams: boolean;
 }
 ```
 
 ### ChessState
-Referenced Types: [GameState](#GameState), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [ChessRound](#ChessRound)
+Referenced Types: [IGameState](#IGameState), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [ChessRound](#ChessRound)
 ```Typescript
-class ChessState implements GameState {
+class ChessState implements IGameState {
     gameName: string = "chess";
     version: number;
     turnEnd: Date;
@@ -208,9 +208,9 @@ class ChessRound {
 ```
 
 ### ChessVote
-Referenced Types: [GameVote](#GameVote), [PGN](#Chess-Aliases), [PlayerId](#Generic-Aliases)
+Referenced Types: [IGameVote](#IGameVote), [PGN](#Chess-Aliases), [PlayerId](#Generic-Aliases)
 ```Typescript
-class ChessVote implements GameVote {
+class ChessVote implements IGameVote {
     gameName: string = "chess";
     movePGN: PGN;
     voters: PlayerId[];
