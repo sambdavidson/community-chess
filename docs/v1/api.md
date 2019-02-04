@@ -1,18 +1,18 @@
-# ![API](./img/community-chess-api.png)
+# ![API](../../media/images/community-chess-api.png) V1
 Defines the API as a collection of endpoints and how they map to services.
 
 ## Dictionary
 - client - Front End, Web UI, Javascript web client.
 
 ## Front Endpoints
-Simplified set of all endpoints available to the client. For details on any endpoint view its' service description.
+Simplified set of all endpoints available to the client. For details on any endpoint view its' service description. During usage, endpoints should be appended to the default API path for this version (`api/v1/`).
 | Method | Endpoint                | Description                                           | Service                           | Request           | Returns                            |
 | ------ | ----------------------- | ----------------------------------------------------- | --------------------------------- | ----------------- | ---------------------------------- |
 | *      | /login                  | (TODO) Some sort of identity flow for obtaining EUCs. | TODO                              | TODO              | TODO                               |
 | GET    | /players/${PlayerId}    | Get details of player ${PlayerId}                     | [Players Server](#Players-Server) |                   | [PlayerExtended](#Player-Extended) |
 | GET    | /games                  | Collection of publicly available games.               | [MC Server](#mc-server)           |                   | [GamesCollection](#gamecollection) |
-| POST   | /games                  | Create a new game.                                    | [MC Server](#mc-server)           | [Game](#game)     |                                    |
-| GET    | /game/${GameId}         | Description of game ${GameId}.                        | [Game Server](#game-server)       |                   | [GameMetadata](#gamemetadata)      |
+| POST   | /games                  | Create a new game.                                    | [MC Server](#mc-server)           | [IGame](#IGame)     |                                    |
+| GET    | /game/${GameId}         | Description of game ${GameId}.                        | [Game Server](#game-server)       |                   | [GameMetadata](#GameMetadata)      |
 | POST   | /game/${GameId}/players | Join (add player) at the game ${GameId}.              | [Game Server](#game-server)       | [Player](#Player) |                                    |
 | POST   | /game/${GameId}/vote    | Cast a vote to the game ${GameId}.                    | [Game Server](#game-server)       | [GameVote](#Vote) |                                    |
 
@@ -54,12 +54,12 @@ class GamesCollection {
 }
 ```
 
-### Game
+### IGame
 Implementations: [Chess](#chess)
 
 Referenced Types: [GameId](#Generic-Aliases), [ChatId](#Generic-Aliases), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [GameMetadata](#GameMetadata), [GameState](#GameState), [Player](#Player)
 ```Typescript
-interface Game {
+interface IGame {
     gameName: string;
     gameId: GameId;
     chatId: ChatId;
@@ -153,9 +153,9 @@ type PGN = string; // Portable Game Notation
 ```
 
 ### Chess
-Referenced Types: [Game](#Game), [GameId](#Generic-Aliases), [ChatId](#Generic-Aliases), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [ChessMetadata](#ChessMetadata), [ChessState](#ChessState), [Player](#Player)
+Referenced Types: [IGame](#IGame), [GameId](#Generic-Aliases), [ChatId](#Generic-Aliases), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [ChessMetadata](#ChessMetadata), [ChessState](#ChessState), [Player](#Player)
 ```Typescript
-class Chess implements Game {
+class Chess implements IGame {
     gameName: string = "chess";
     gameId: GameId;
     chatId: ChatId;
