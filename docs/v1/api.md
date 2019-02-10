@@ -1,5 +1,5 @@
 # ![API](../../media/images/community-chess-api.png) V1
-Defines the API as a collection of endpoints and how they map to services.
+Defines the API as a collection of endpoints and how they map to services. [WIP Services API Diagram](https://www.lucidchart.com/invitations/accept/14a7c464-d9c6-49f3-b02c-a36f96ed1ccd)
 
 ## Dictionary
 - client - Front End, Web UI, Javascript web client.
@@ -10,12 +10,12 @@ Simplified set of all endpoints available to the client. For details on any endp
 For example: `GET www.communitychess.com/api/v1/games`
 
 
-| Method | Endpoint                | Description                                           | Service                           | Request Body                | Return Body                            |
+| Method | Endpoint                | Description                                           | Service                           | Request Body            | Return Body                        |
 | ------ | ----------------------- | ----------------------------------------------------- | --------------------------------- | ----------------------- | ---------------------------------- |
 | *      | /login                  | (TODO) Some sort of identity flow for obtaining EUCs. | TODO                              | TODO                    | TODO                               |
 | GET    | /players/${PlayerId}    | Get details of player ${PlayerId}                     | [Players Server](#Players-Server) |                         | [PlayerExtended](#Player-Extended) |
 | GET    | /games                  | Collection of publicly available games.               | [MC Server](#mc-server)           |                         | [GamesCollection](#GameCollection) |
-| POST   | /games                  | Create a new game.                                    | [MC Server](#mc-server)           | [IGame](#IGame)         |                                    |
+| POST   | /games                  | Create a new game.                                    | [MC Server](#mc-server)           | [IGame](#IGame)         | [IGameMetadata](#IGameMetadata)    |
 | GET    | /game/${GameId}         | Description of game ${GameId}.                        | [Game Server](#game-server)       |                         | [IGameMetadata](#IGameMetadata)    |
 | POST   | /game/${GameId}/players | Join (add player) at the game ${GameId}.              | [Game Server](#game-server)       | [Player](#Player)       |                                    |
 | POST   | /game/${GameId}/vote    | Cast a vote to the game ${GameId}.                    | [Game Server](#game-server)       | [IGameVote](#IGameVote) |                                    |
