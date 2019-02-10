@@ -8,7 +8,7 @@ Defines the API as a collection of endpoints and how they map to services.
 Simplified set of all endpoints available to the client. For details on any endpoint view its' service description. During usage, endpoints should be appended to the default API path for this version (`api/v1/`).
 
 
-| Method | Endpoint                | Description                                           | Service                           | Request                 | Returns                            |
+| Method | Endpoint                | Description                                           | Service                           | Request Body                | Return Body                            |
 | ------ | ----------------------- | ----------------------------------------------------- | --------------------------------- | ----------------------- | ---------------------------------- |
 | *      | /login                  | (TODO) Some sort of identity flow for obtaining EUCs. | TODO                              | TODO                    | TODO                               |
 | GET    | /players/${PlayerId}    | Get details of player ${PlayerId}                     | [Players Server](#Players-Server) |                         | [PlayerExtended](#Player-Extended) |
@@ -22,8 +22,11 @@ Simplified set of all endpoints available to the client. For details on any endp
 
 ### Generic Aliases
 ```Typescript
+// Unique identifier for a player. Global and one PlayerId per account.
 type PlayerId = string;
+// Unique identifier for every game created.
 type GameId = string;
+// Unique identifier for a chat conversation thread. 
 type ChatId = string;
 ```
 
