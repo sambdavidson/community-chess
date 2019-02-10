@@ -7,6 +7,8 @@ Defines the API as a collection of endpoints and how they map to services.
 ## Front Endpoints
 Simplified set of all endpoints available to the client. For details on any endpoint view its' service description. During usage, endpoints should be appended to the default API path for this version (`api/v1/`).
 
+For example: `GET www.communitychess.com/api/v1/games`
+
 
 | Method | Endpoint                | Description                                           | Service                           | Request Body                | Return Body                            |
 | ------ | ----------------------- | ----------------------------------------------------- | --------------------------------- | ----------------------- | ---------------------------------- |
