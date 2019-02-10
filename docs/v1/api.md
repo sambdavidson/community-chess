@@ -6,14 +6,16 @@ Defines the API as a collection of endpoints and how they map to services.
 
 ## Front Endpoints
 Simplified set of all endpoints available to the client. For details on any endpoint view its' service description. During usage, endpoints should be appended to the default API path for this version (`api/v1/`).
-| Method | Endpoint                | Description                                           | Service                           | Request           | Returns                            |
-| ------ | ----------------------- | ----------------------------------------------------- | --------------------------------- | ----------------- | ---------------------------------- |
-| *      | /login                  | (TODO) Some sort of identity flow for obtaining EUCs. | TODO                              | TODO              | TODO                               |
-| GET    | /players/${PlayerId}    | Get details of player ${PlayerId}                     | [Players Server](#Players-Server) |                   | [PlayerExtended](#Player-Extended) |
-| GET    | /games                  | Collection of publicly available games.               | [MC Server](#mc-server)           |                   | [GamesCollection](#GameCollection) |
-| POST   | /games                  | Create a new game.                                    | [MC Server](#mc-server)           | [IGame](#IGame)     |                                    |
-| GET    | /game/${GameId}         | Description of game ${GameId}.                        | [Game Server](#game-server)       |                   | [IGameMetadata](#IGameMetadata)      |
-| POST   | /game/${GameId}/players | Join (add player) at the game ${GameId}.              | [Game Server](#game-server)       | [Player](#Player) |                                    |
+
+
+| Method | Endpoint                | Description                                           | Service                           | Request                 | Returns                            |
+| ------ | ----------------------- | ----------------------------------------------------- | --------------------------------- | ----------------------- | ---------------------------------- |
+| *      | /login                  | (TODO) Some sort of identity flow for obtaining EUCs. | TODO                              | TODO                    | TODO                               |
+| GET    | /players/${PlayerId}    | Get details of player ${PlayerId}                     | [Players Server](#Players-Server) |                         | [PlayerExtended](#Player-Extended) |
+| GET    | /games                  | Collection of publicly available games.               | [MC Server](#mc-server)           |                         | [GamesCollection](#GameCollection) |
+| POST   | /games                  | Create a new game.                                    | [MC Server](#mc-server)           | [IGame](#IGame)         |                                    |
+| GET    | /game/${GameId}         | Description of game ${GameId}.                        | [Game Server](#game-server)       |                         | [IGameMetadata](#IGameMetadata)    |
+| POST   | /game/${GameId}/players | Join (add player) at the game ${GameId}.              | [Game Server](#game-server)       | [Player](#Player)       |                                    |
 | POST   | /game/${GameId}/vote    | Cast a vote to the game ${GameId}.                    | [Game Server](#game-server)       | [IGameVote](#IGameVote) |                                    |
 
 ## Generic Structures
