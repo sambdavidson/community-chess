@@ -20,9 +20,9 @@ For example: `GET www.communitychess.com/api/v1/games`
 | POST   | /game/${GameId}/players | Join (add player) at the game ${GameId}.              | [Game Server](#game-server)       | [Player](#Player)       |                                    |
 | POST   | /game/${GameId}/vote    | Cast a vote to the game ${GameId}.                    | [Game Server](#game-server)       | [IGameVote](#IGameVote) |                                    |
 
-## Generic Structures
+## Base Structures
 
-### Generic Aliases
+### Base Aliases
 ```Typescript
 // Unique identifier for a player. Global and one PlayerId per account.
 type PlayerId = string;
@@ -33,7 +33,7 @@ type ChatId = string;
 ```
 
 ### Player
-Referenced Types: [PlayerId](#Generic-Aliases)
+Referenced Types: [PlayerId](#Base-Aliases)
 ```Typescript
 class Player {
     playerId: PlayerId;
@@ -42,7 +42,7 @@ class Player {
 ```
 
 ### PlayerExtended
-Refrenced Types: [Player](#Player), [GameId](#Generic-Aliases)
+Refrenced Types: [Player](#Player), [GameId](#Base-Aliases)
 ```Typescript
 class PlayerExtended extends Player {
     email: string;
@@ -53,18 +53,18 @@ class PlayerExtended extends Player {
 ```
 
 ### GamesCollection
-Referenced Types: [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [Game](#Game)
+Referenced Types: [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [IGame](#IGame)
 ```Typescript
 class GamesCollection {
     time: Date;
-    games: Game[];
+    games: IGame[];
 }
 ```
 
 ### IGame
 Implementations: [Chess](#chess)
 
-Referenced Types: [GameId](#Generic-Aliases), [ChatId](#Generic-Aliases), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [IGameMetadata](#IGameMetadata), [IGameState](#IGameState), [Player](#Player)
+Referenced Types: [GameId](#Base-Aliases), [ChatId](#Base-Aliases), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [IGameMetadata](#IGameMetadata), [IGameState](#IGameState), [Player](#Player)
 ```Typescript
 interface IGame {
     gameName: string;
@@ -160,7 +160,7 @@ type PGN = string; // Portable Game Notation
 ```
 
 ### Chess
-Referenced Types: [IGame](#IGame), [GameId](#Generic-Aliases), [ChatId](#Generic-Aliases), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [ChessMetadata](#ChessMetadata), [ChessState](#ChessState), [Player](#Player)
+Referenced Types: [IGame](#IGame), [GameId](#Base-Aliases), [ChatId](#Base-Aliases), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [ChessMetadata](#ChessMetadata), [ChessState](#ChessState), [Player](#Player)
 ```Typescript
 class Chess implements IGame {
     gameName: string = "chess";
@@ -210,12 +210,12 @@ Referenced Types: [FEN](#Chess-Aliases), [ChessVote](#ChessVote)
 ```Typescript
 class ChessRound {
     board: FEN;
-    votes: {[player: playerId]: ChessVote;};
+    votes: {[playerId: string]: ChessVote;};
 }
 ```
 
 ### ChessVote
-Referenced Types: [IGameVote](#IGameVote), [PGN](#Chess-Aliases), [PlayerId](#Generic-Aliases)
+Referenced Types: [IGameVote](#IGameVote), [PGN](#Chess-Aliases), [PlayerId](#Base-Aliases)
 ```Typescript
 class ChessVote implements IGameVote {
     gameName: string = "chess";
