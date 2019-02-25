@@ -5,17 +5,17 @@ export type FEN = string;
 // Portable Game Notation
 export type PGN = string;
 
-export class Chess implements base.IGame {
+export class Chess implements base.Models.IGame {
     gameName: string = "chess";
-    gameId: base.GameId;
-    chatId: base.ChatId;
+    gameId: base.Models.GameId;
+    chatId: base.Models.ChatId;
     creationTime: Date;
     metadata: ChessMetadata;
     state: ChessState;
-    players: base.Player[]
+    players: base.Models.Player[]
 }
 
-export class ChessMetadata implements base.IGameMetadata {
+export class ChessMetadata implements base.Models.IGameMetadata {
     gameName: string = "chess";
     version: number;
     title: string;
@@ -23,12 +23,12 @@ export class ChessMetadata implements base.IGameMetadata {
     rules: ChessRules
 }
 
-export class ChessRules implements base.IGameRules {
-    voteApplication: base.IVoteApplication;
+export class ChessRules implements base.Models.IGameRules {
+    voteApplication: base.Models.IVoteApplication;
     balancedTeams: boolean;
 }
 
-export class ChessState implements base.IGameState {
+export class ChessState implements base.Models.IGameState {
     gameName: string = "chess";
     version: number;
     turnEnd: Date;
@@ -40,8 +40,8 @@ export class ChessRound {
     votes: {[playerId: string]: ChessVote};
 }
 
-export class ChessVote implements base.IGameVote {
+export class ChessVote implements base.Models.IGameVote {
     gameName: string = "chess";
     movePGN: PGN;
-    voters: base.PlayerId[];
+    voters: base.Models.PlayerId[];
 }

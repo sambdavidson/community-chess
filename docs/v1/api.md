@@ -16,9 +16,9 @@ For example: `GET www.communitychess.com/api/v1/games`
 | GET    | /players/${PlayerId}    | Get details of player ${PlayerId}                     | [Players Server](#Players-Server) |                         | [PlayerExtended](#Player-Extended) |
 | GET    | /games                  | Collection of publicly available games.               | [MC Server](#mc-server)           |                         | [GamesCollection](#GameCollection) |
 | POST   | /games                  | Create a new game.                                    | [MC Server](#mc-server)           | [IGame](#IGame)         | [IGameMetadata](#IGameMetadata)    |
-| GET    | /game/${GameId}         | Description of game ${GameId}.                        | [Game Server](#game-server)       |                         | [IGameMetadata](#IGameMetadata)    |
-| POST   | /game/${GameId}/players | Join (add player) at the game ${GameId}.              | [Game Server](#game-server)       | [Player](#Player)       |                                    |
-| POST   | /game/${GameId}/vote    | Cast a vote to the game ${GameId}.                    | [Game Server](#game-server)       | [IGameVote](#IGameVote) |                                    |
+| GET    | /games/${GameId}         | Description of game ${GameId}.                        | [Game Server](#game-server)       |                         | [IGameMetadata](#IGameMetadata)    |
+| POST   | /games/${GameId}/players | Join (add player) at the game ${GameId}.              | [Game Server](#game-server)       | [Player](#Player)       |                                    |
+| POST   | /games/${GameId}/vote    | Cast a vote to the game ${GameId}.                    | [Game Server](#game-server)       | [IGameVote](#IGameVote) |                                    |
 
 ## Base Structures
 
@@ -234,4 +234,5 @@ The Master of Ceremonies Server (MC Server) is responsible for enumerating avail
 
 ### Game Server
 The Game Server run the actual game. 
+
 
