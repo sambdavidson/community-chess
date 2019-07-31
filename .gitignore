@@ -65,3 +65,6 @@ build
 
 # GCloud Configs
 secrets
+
+# Generated proto go files
+*.pb.go

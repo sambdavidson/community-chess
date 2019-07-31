@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package CommunityChess;
+
+message ChessRules {
+    bool balancedTeams = 1;
+}
+
+message ChessState {
+    int64 turnEnd = 1;
+    repeated ChessRound rounds = 2;
+
+    message ChessRound {
+        string board_fen = 1;
+        map<string, string> player_to_vote_pgn = 2;
+    }
+}

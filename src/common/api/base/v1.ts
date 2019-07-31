@@ -1,19 +1,28 @@
 import { HTTPMethods } from "../../httpMethods";
 
 export namespace Models {
-    // Unique identifier for a player. Global and one PlayerId per account.
-    export type PlayerId = string;
     // Unique identifier for every game created.
     export type GameId = string;
     // Unique identifier for a chat conversation thread. 
     export type ChatId = string;
 
-    export class Player {
-        playerId: PlayerId;
+    export type Player = PlayerLite | PlayerFull;
+    export namespace Player {
+        /**  
+         * Unique identifier for a player. Global and one PlayerId per account.
+         * 128-bit UUID/v4 
+         **/
+        export type Id = string;
+    }
+    export class PlayerLite {
+        pType: 'playerSimple';
+        playerId: Player.Id;
         nickname: string;
     }
-
-    export class PlayerExtended extends Player {
+    export class PlayerFull {
+        pType: 'playerFull';
+        playerId: Player.Id;
+        nickname: string;
         email: string;
         username: string;
         games: GameId[];
@@ -44,18 +53,16 @@ export namespace Models {
     }
 
     export interface IGameRules {
-        voteApplication: IVoteApplication;
+        voteApplication: VoteApplication;
     }
 
-    export interface IVoteApplication {
-        voteApplicationName: string;
-    }
+    export type VoteApplication = VoteAppliedImmediately | VoteAppliedAfterTally;
 
-    export class VoteAppliedImmediately implements IVoteApplication {
+    export class VoteAppliedImmediately {
         voteApplicationName: string = 'voteAppliedImmediately';
     }
 
-    export class VoteAppliedAfterTally implements IVoteApplication {
+    export class VoteAppliedAfterTally {
         voteApplicationName: string = 'voteAppliedAfterTally';
         voteTimeout: number;
         selectionType: SelectionType;
@@ -85,56 +92,52 @@ export interface IRoute {
 
 export namespace Routes {
     export namespace Players {
-        export class Get {
-            static Method = HTTPMethods.GET;
-            static Path
+        export namespace Get {
+            export const Method = HTTPMethods.GET;
+            export const Path = (id: Models.Player.Id) => `${RoutePrefix}/players/${id}`;
+            export type BodyType = undefined;
+            export type ReturnType = Models.Player; 
+        }
+        export namespace Patch {
+            export const Method = HTTPMethods.PATCH;
+            export const Path = (id: Models.Player.Id) => `${RoutePrefix}/players/${id}`;
+            export type BodyType = Models.Player;
+            export type ReturnType = Models.Player; 
         }
     }
     export namespace Games { 
-        // export class Get {
-        //     static Method = HTTPMethods.GET;
-        //     static Path(id: string): string {
-        //         return RoutePrefix + `/games/${id}`;
-        //     }
-        // }
-        export const Get = {
-            Method: HTTPMethods.GET,
-            Path: (id: string) =>  RoutePrefix + `/games/${id}`
+        export namespace Create {
+            export const Method = HTTPMethods.POST;
+            export const Path = () => `${RoutePrefix}/games`;
+            export type BodyType = Models.IGame;
+            export type ReturnType = Models.IGameMetadata;
+        }
+        export namespace List {
+            export const Method = HTTPMethods.GET;
+            export const Path = () => `${RoutePrefix}/games`;
+            export type BodyType = undefined;
+            export type ReturnType = Models.GamesCollection;
         }
         export namespace Get {
-            export type ReturnType = Models.GameId;
+            export const Method = HTTPMethods.GET;
+            export const Path = (id: string) => `${RoutePrefix}/games/${id}`;
+            export type BodyType = undefined;
+            export type ReturnType = Models.IGameMetadata;
         }
-        // export class List {
-        //     static Method = HTTPMethods.GET;
-        //     static Path(): string {
-        //         return RoutePrefix + `/games`;
-        //     }
-        //     static ReturnType = Models.GamesCollection;
-        // }
+        export namespace AddPlayer {
+            export const Method = HTTPMethods.POST;
+            export const Path = (id: string) => `${RoutePrefix}/games/${id}/players`;
+            export type BodyType = Models.Player;
+            export type ReturnType = undefined;
+        }
+        export namespace CastVote {
+            export const Method = HTTPMethods.POST;
+            export const Path = (id: string) => `${RoutePrefix}/games/${id}/players`;
+            export type BodyType = Models.IGameVote;
+            export type ReturnType = undefined;
+        }
     }
 }
-
-interface IFoo {
-    a: string | number;
-}
-
-interface IV extends IFoo {
-    a: string;
-}
-
-const v: IV = {
-    a: 'a',
-}
-
-const f: IFoo = v;
-
-const j: IV = f;
-
-const l = v;
-
-Routes.Games.Get.Path(s);
-
-let r: Routes.Games.Get.ReturnType = Routes.Games.Get.Path('');
 
 /*
 WORK IN PROGRESS 2/25/2019

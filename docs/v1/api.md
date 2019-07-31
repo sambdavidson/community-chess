@@ -13,7 +13,7 @@ For example: `GET www.communitychess.com/api/v1/games`
 | Method | Endpoint                | Description                                           | Service                           | Request Body            | Return Body                        |
 | ------ | ----------------------- | ----------------------------------------------------- | --------------------------------- | ----------------------- | ---------------------------------- |
 | *      | /login                  | (TODO) Some sort of identity flow for obtaining EUCs. | TODO                              | TODO                    | TODO                               |
-| GET    | /players/${PlayerId}    | Get details of player ${PlayerId}                     | [Players Server](#Players-Server) |                         | [PlayerExtended](#Player-Extended) |
+| GET    | /players/${PlayerId}    | Get details of player ${PlayerId}                     | [Players Server](#Players-Server) |                         | [Player](#Player) |
 | GET    | /games                  | Collection of publicly available games.               | [MC Server](#mc-server)           |                         | [GamesCollection](#GameCollection) |
 | POST   | /games                  | Create a new game.                                    | [MC Server](#mc-server)           | [IGame](#IGame)         | [IGameMetadata](#IGameMetadata)    |
 | GET    | /games/${GameId}         | Description of game ${GameId}.                        | [Game Server](#game-server)       |                         | [IGameMetadata](#IGameMetadata)    |
@@ -33,18 +33,18 @@ type ChatId = string;
 ```
 
 ### Player
-Referenced Types: [PlayerId](#Base-Aliases)
+Referenced Types: [PlayerId](#Base-Aliases), [GameId](#Base-Aliases)
 ```Typescript
-class Player {
+type Player = PlayerLite | PlayerFull
+class PlayerLite {
+    pType: 'playerSimple';
     playerId: PlayerId;
     nickname: string;
 }
-```
-
-### PlayerExtended
-Refrenced Types: [Player](#Player), [GameId](#Base-Aliases)
-```Typescript
-class PlayerExtended extends Player {
+class PlayerFull {
+    pType: 'playerFull';
+    playerId: PlayerId;
+    nickname: string;
     email: string;
     username: string;
     games: GameId[];

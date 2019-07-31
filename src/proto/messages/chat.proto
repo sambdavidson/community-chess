@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package CommunityChess;
+
+// Unique identifier for a chat conversation thread.
+message ChatId {
+    string id = 1;
+}

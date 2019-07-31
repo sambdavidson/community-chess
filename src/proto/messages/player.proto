@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package CommunityChess;
+
+// A player is corresponds to a single human playing the game.
+message Player {
+    Id id = 1;
+    string nickname = 2;
+    string username = 3;
+
+    // Unique identifier for a player. Global and one PlayerId per account.
+    message Id {
+        string id = 1;
+    }
+    // TODO: Figure out Authz stuff
+}

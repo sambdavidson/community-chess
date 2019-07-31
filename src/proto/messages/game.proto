@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+import "messages/games/chess.proto";
+
+package CommunityChess;
+
+message Game {
+    Id id = 2;
+    int64 creation_time = 3;
+    Metadata metadata = 4;
+    oneof state {
+        ChessState chess_state = 1;
+    }
+
+    message Id {
+        string id = 1;
+    }
+
+    message Metadata {
+        int32 version = 1;
+        string title = 2;
+        Visibility visibility = 3;
+        Rules rules = 4;
+
+        enum Visibility {
+            OPEN = 0;
+            INVITE_ONLY = 1;
+        }
+
+        message Rules {
+            oneof vote_application {
+                VoteAppliedImmediately vote_applied_immediately = 1;
+                VoteAppliedAfterTally vote_applied_after_tally = 2;
+            }
+            oneof game_specific_rules {
+                ChessRules chess_rules = 3;
+            }
+            message VoteAppliedImmediately {}
+            message VoteAppliedAfterTally {
+                int32 timeout_seconds = 1;
+                SelectionType selection_type = 2;
+
+                enum SelectionType {
+                    PROBABILITY = 0;
+                    MOST_VOTES = 1;
+                }
+
+            }
+            
+        }
+        
+    }
+}
+
+message VoteApplication {
+    string name = 1;
+}

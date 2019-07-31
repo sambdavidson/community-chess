@@ -1,0 +1,9 @@
+service GameServer {
+    rpc GetGame (GetGameRequest) returns (GetGameResponse);
+}
+
+message GetGameRequest {
+
+}
+message GetGameResponse {
+}
