@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package CommunityChess;
+package communitychess;
 
 // A player is corresponds to a single human playing the game.
 message Player {

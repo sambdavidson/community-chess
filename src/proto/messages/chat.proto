@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package CommunityChess;
+package communitychess;
 
 // Unique identifier for a chat conversation thread.
 message ChatId {

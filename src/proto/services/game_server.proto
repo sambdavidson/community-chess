@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+import "messages/game.proto";
+import "messages/player.proto";
+
+package gameserver;
+
+service GameServer {
+    rpc GameInfo (GameInfoRequest) returns (GameInfoResponse);
+    rpc GetVotes (GetVotesRequest) returns (GetVotesResponse);
+    rpc CastVote (CastVoteRequest) returns (CastVoteResponse);
+}
+
+message GameInfoRequest {
+    string game_id = 1;
+}
+
+message GameInfoResponse {
+    communitychess.Game game = 1;
+    repeated communitychess.Player player = 2;
+}
+
+message GetVotesRequest {
+    int64 index = 1;
+    communitychess.Game.Id game_id = 2;
+}
+
+message GetVotesResponse {
+    int64 start_index = 1;
+    int64 end_index = 2;
+    map<string, communitychess.Vote> player_id_to_vote_map = 3;
+}
+
+message CastVoteRequest {
+    communitychess.Player.Id player_id = 1;
+    communitychess.Vote vote = 2;
+}
+
+message CastVoteResponse {}

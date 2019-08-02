@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package CommunityChess;
+package communitychess;
 
 message ChessRules {
     bool balancedTeams = 1;
@@ -14,4 +14,8 @@ message ChessState {
         string board_fen = 1;
         map<string, string> player_to_vote_pgn = 2;
     }
+}
+
+message ChessVote {
+    string move_pgn = 1;
 }

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "messages/games/chess.proto";
 
-package CommunityChess;
+package communitychess;
 
 message Game {
     Id id = 2;
@@ -52,6 +52,9 @@ message Game {
     }
 }
 
-message VoteApplication {
-    string name = 1;
+message Vote {
+    string game_id = 1;
+    oneof vote_data {
+        ChessVote chess_vote = 2;
+    }
 }
