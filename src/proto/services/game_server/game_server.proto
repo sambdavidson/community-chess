@@ -1,4 +1,6 @@
-// protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\game_server\game_server.proto
+/* BUILD
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\game_server\game_server.proto
+*/
 
 syntax = "proto3";
 

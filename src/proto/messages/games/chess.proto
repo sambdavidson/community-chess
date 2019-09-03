@@ -1,3 +1,7 @@
+/* BUILD
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\messages\games\chess.proto
+*/
+
 syntax = "proto3";
 
 package games;
