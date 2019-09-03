@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+import "messages/player.proto";
+
+package CommunityChess;
+
+service PlayerRegistrar {
+    rpc RegisterPlayer (RegisterPlayerRequest) returns (RegisterPlayerResponse);
+    rpc GetPlayer (GetPlayerRequest) returns (GetPlayerReponse);
+}
+
+message RegisterPlayerRequest {
+    string username = 1;
+    // TODO: oauth stuff
+    // email, link to social media and stuff
+}
+
+message RegisterPlayerResponse {
+    Player player = 1;
+}
+
+message GetPlayerRequest {
+    Player.Id player_id = 1;
+}
+
+message GetPlayerReponse {
+    Player player = 1;
+}
