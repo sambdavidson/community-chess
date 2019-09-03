@@ -1,11 +1,15 @@
+/* BUILD
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\messages\vote.proto
+*/
+
 syntax = "proto3";
 
-import "messages/games/chess.proto";
+import "github.com/samdamana/community-chess/src/proto/messages/games/chess.proto";
 
-package CommunityChess;
+package messages;
 
 message Vote {
     oneof game_vote {
-        ChessVote chess_vote = 3;
+        games.ChessVote chess_vote = 3;
     }
 }

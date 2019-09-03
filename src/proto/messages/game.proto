@@ -1,15 +1,19 @@
+/* BUILD
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\messages\game.proto
+*/
+
 syntax = "proto3";
 
-import "messages/games/chess.proto";
+import "github.com/samdamana/community-chess/src/proto/messages/games/chess.proto";
 
-package CommunityChess;
+package messages;
 
 message Game {
     Id id = 2;
     int64 creation_time = 3;
     Metadata metadata = 4;
     oneof state {
-        ChessState chess_state = 1;
+        games.ChessState chess_state = 1;
     }
 
     message Id {
@@ -33,7 +37,7 @@ message Game {
                 VoteAppliedAfterTally vote_applied_after_tally = 2;
             }
             oneof game_specific_rules {
-                ChessRules chess_rules = 3;
+                games.ChessRules chess_rules = 3;
             }
             message VoteAppliedImmediately {}
             message VoteAppliedAfterTally {

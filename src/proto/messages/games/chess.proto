@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package CommunityChess;
+package games;
 
 message ChessRules {
     bool balancedTeams = 1;

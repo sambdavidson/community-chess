@@ -1,0 +1,46 @@
+// protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\game_server\game_server.proto
+
+syntax = "proto3";
+
+import "github.com/samdamana/community-chess/src/proto/messages/game.proto";
+import "github.com/samdamana/community-chess/src/proto/messages/player.proto";
+import "github.com/samdamana/community-chess/src/proto/messages/vote.proto";
+
+package game_server;
+
+service GameServer {
+    rpc GetGame (GetGameRequest) returns (GetGameResponse);
+    rpc AddPlayer (AddPlayerRequest) returns (AddPlayerResponse);
+    rpc RemovePlayer (RemovePlayerRequest) returns (RemovePlayerResponse);
+    rpc PostVotes (PostVotesRequest) returns (PostVotesResponse);
+}
+
+message GetGameRequest {
+    messages.Game.Id game_id = 1;
+}
+
+message GetGameResponse {
+    repeated messages.Game game = 1;
+}
+
+message AddPlayerRequest {
+    messages.Game.Id game_id = 1;
+    messages.Player.Id player_id = 2;   
+}
+
+message AddPlayerResponse {}
+
+message RemovePlayerRequest {
+    messages.Game.Id game_id = 1;
+    messages.Player.Id player_id = 2;
+}
+
+message RemovePlayerResponse {}
+
+message PostVotesRequest {
+    messages.Game.Id game_id = 1;
+    messages.Player.Id player_id = 2;
+    messages.Vote vote = 3;
+}
+
+message PostVotesResponse {}

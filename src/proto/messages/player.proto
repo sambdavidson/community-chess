@@ -1,6 +1,10 @@
+/* BUILD
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\messages\player.proto
+*/
+
 syntax = "proto3";
 
-package CommunityChess;
+package messages;
 
 // A player is corresponds to a single human playing the game.
 message Player {

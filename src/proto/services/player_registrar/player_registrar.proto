@@ -1,8 +1,12 @@
+/* BUILD
+protoc --proto_path=src/proto --go_out=plugins=grpc:src/proto .\src\proto\services\player_registrar.proto
+*/
+
 syntax = "proto3";
 
-import "messages/player.proto";
+import "github.com/samdamana/community-chess/src/proto/messages/player.proto";
 
-package CommunityChess;
+package player_registrar;
 
 service PlayerRegistrar {
     rpc RegisterPlayer (RegisterPlayerRequest) returns (RegisterPlayerResponse);
@@ -16,13 +20,13 @@ message RegisterPlayerRequest {
 }
 
 message RegisterPlayerResponse {
-    Player player = 1;
+    messages.Player player = 1;
 }
 
 message GetPlayerRequest {
-    Player.Id player_id = 1;
+    messages.Player.Id player_id = 1;
 }
 
 message GetPlayerReponse {
-    Player player = 1;
+    messages.Player player = 1;
 }
