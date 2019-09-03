@@ -13,5 +13,10 @@ message ChessState {
     message ChessRound {
         string board_fen = 1;
         map<string, string> player_to_vote_pgn = 2;
+        map<string, int32> vote_pgn_to_count = 3;
     }
+}
+
+message ChessVote {
+    string move_pgn = 1;
 }

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+import "messages/games/chess.proto";
+
+package CommunityChess;
+
+message Vote {
+    oneof game_vote {
+        ChessVote chess_vote = 3;
+    }
+}
