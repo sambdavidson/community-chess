@@ -20,6 +20,7 @@ message Player {
     string username = 3;
     int32 number_suffix = 4;
 
+    //  The number of nanoseconds between the creation of this player and January 1, 1970 UTC.
     int64 creation_time = 5;
 
     // Unique identifier for a player. Global and one PlayerId per account.

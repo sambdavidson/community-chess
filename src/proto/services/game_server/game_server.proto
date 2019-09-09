@@ -42,7 +42,7 @@ message RemovePlayerResponse {}
 message PostVotesRequest {
     messages.Game.Id game_id = 1;
     messages.Player.Id player_id = 2;
-    messages.Vote vote = 3;
+    repeated messages.Vote vote = 3;
 }
 
 message PostVotesResponse {}
