@@ -11,8 +11,8 @@ import (
 	"log"
 	"net"
 
-	chess "github.com/samdamana/community-chess/src/game_server/chess"
-	gs "github.com/samdamana/community-chess/src/proto/services/game_server"
+	chess "github.com/sambdavidson/community-chess/src/game_server/chess"
+	gs "github.com/sambdavidson/community-chess/src/proto/services/game_server"
 	"google.golang.org/grpc"
 )
 

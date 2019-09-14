@@ -19,9 +19,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/samdamana/community-chess/src/proto/messages"
+	"github.com/sambdavidson/community-chess/src/proto/messages"
 
-	pb "github.com/samdamana/community-chess/src/proto/services/player_registrar"
+	pb "github.com/sambdavidson/community-chess/src/proto/services/player_registrar"
 	"google.golang.org/grpc"
 )
 

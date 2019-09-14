@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/samdamana/community-chess/src/proto/messages"
-	gs "github.com/samdamana/community-chess/src/proto/services/game_server"
-	pr "github.com/samdamana/community-chess/src/proto/services/player_registrar"
+	"github.com/sambdavidson/community-chess/src/proto/messages"
+	gs "github.com/sambdavidson/community-chess/src/proto/services/game_server"
+	pr "github.com/sambdavidson/community-chess/src/proto/services/player_registrar"
 	"google.golang.org/grpc"
 )
 
@@ -52,9 +52,12 @@ func init() {
 		},
 		"get_player": command{
 			helpText: "gets a player, updates active player if found.\nE.g. 'get_player 123456'",
-			action: getPlayerAction,
-
-		}
+			action:   getPlayerAction,
+		},
+		"get_game": command{
+			helpText: "gets a game.\nE.g. 'get_game 123456'",
+			action:   getGameAction,
+		},
 		"help": command{
 			helpText: "foo",
 			action:   helpAction,
@@ -120,7 +123,7 @@ func getPlayerAction(cmdParts []string) {
 	out, err := prCli.GetPlayer(ctx, &pr.GetPlayerRequest{
 		PlayerId: &messages.Player_Id{
 			Id: cmdParts[1],
-		}
+		},
 	})
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
@@ -128,6 +131,26 @@ func getPlayerAction(cmdParts []string) {
 	knownPlayers[out.GetPlayer().GetId().GetId()] = out.GetPlayer()
 	activePlayer = out.GetPlayer()
 	fmt.Printf("got, updated active player: %v\n", out.GetPlayer())
+}
+
+func getGameAction(cmdParts []string) {
+	if len(cmdParts) != 2 {
+		fmt.Println("missing game id")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	out, err := gsCli.GetGame(ctx, &gs.GetGameRequest{
+		GameId: &messages.Game_Id{
+			Id: cmdParts[1],
+		},
+	})
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		return
+	}
+	fmt.Printf("ok: %v\n", out.GetGame())
 }
 
 func main() {
@@ -140,13 +163,14 @@ func main() {
 		read, _ := reader.ReadString('\n')
 		text := strings.Trim(read, " \n\r")
 		cmdParts := strings.Split(text, " ")
-		if cmdParts[0] == "quit" || cmdParts[0] == "exit" {
+		verb := strings.ToLower(cmdParts[0])
+		if verb == "quit" || verb == "exit" {
 			break
 		}
 
-		cmd, ok := commands[cmdParts[0]]
+		cmd, ok := commands[verb]
 		if !ok {
-			fmt.Printf("unknown command: %s\n", cmdParts[0])
+			fmt.Printf("unknown command: %s\n", verb)
 			continue
 		}
 		cmd.action(cmdParts)

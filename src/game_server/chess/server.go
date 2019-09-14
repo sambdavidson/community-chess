@@ -2,12 +2,13 @@ package chess
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"google.golang.org/grpc/codes"
 
-	gs "github.com/samdamana/community-chess/src/proto/services/game_server"
-	pr "github.com/samdamana/community-chess/src/proto/services/player_registrar"
+	gs "github.com/sambdavidson/community-chess/src/proto/services/game_server"
+	pr "github.com/sambdavidson/community-chess/src/proto/services/player_registrar"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
@@ -45,20 +46,24 @@ func NewServer(o Opts) (*Server, error) {
 
 // GetGame gets the game details given a GetGameRequest
 func (s *Server) GetGame(ctx context.Context, in *gs.GetGameRequest) (*gs.GetGameResponse, error) {
+	fmt.Printf("GetGame %v", in)
 	return nil, status.Error(codes.Unimplemented, "TODO implement GetGame")
 }
 
 // AddPlayer adds a player to the existing game
 func (s *Server) AddPlayer(ctx context.Context, in *gs.AddPlayerRequest) (*gs.AddPlayerResponse, error) {
+	fmt.Printf("AddPlayer %v", in)
 	return nil, status.Error(codes.Unimplemented, "TODO implement AddPlayer")
 }
 
 // RemovePlayer removes a player from the current game
 func (s *Server) RemovePlayer(ctx context.Context, in *gs.RemovePlayerRequest) (*gs.RemovePlayerResponse, error) {
+	fmt.Printf("RemovePlayer %v", in)
 	return nil, status.Error(codes.Unimplemented, "TODO implement RemovePlayer")
 }
 
 // PostVotes posts 1+ votes to the current game
 func (s *Server) PostVotes(ctx context.Context, in *gs.PostVotesRequest) (*gs.PostVotesResponse, error) {
+	fmt.Printf("PostVotes %v", in)
 	return nil, status.Error(codes.Unimplemented, "TODO implement PostVotes")
 }
