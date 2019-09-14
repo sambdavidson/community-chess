@@ -35,7 +35,10 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	pb.RegisterPlayerRegistrarServer(s, &Server{})
+	pb.RegisterPlayerRegistrarServer(s, &Server{
+		players:        map[string]*messages.Player{},
+		usernameCounts: map[string]int32{},
+	})
 
 	log.Printf("Starting listen of Player Registrar on port %v\n", *port)
 	if err := s.Serve(lis); err != nil {
