@@ -7,41 +7,38 @@ import (
 
 	"google.golang.org/grpc/codes"
 
+	"github.com/sambdavidson/community-chess/src/proto/messages"
 	gs "github.com/sambdavidson/community-chess/src/proto/services/game_server"
 	pr "github.com/sambdavidson/community-chess/src/proto/services/player_registrar"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
 // Server implement the GameServer service.
 type Server struct {
-	server          *grpc.Server
-	conn            *grpc.ClientConn
-	playerRegistrar pr.PlayerRegistrarClient
+	playerRegistrarCli pr.PlayerRegistrarClient
 
 	mux sync.Mutex
 }
 
-// Opts is the options for setting up a GameServer.
+// Opts contains the options for building a chess server
 type Opts struct {
-	Server                 *grpc.Server
-	PlayerRegistrarAddress string
+	playerRegistrarCli pr.PlayerRegistrarClient
+	gameMetadata       *messages.Game_Metadata
 }
 
 // NewServer builds a new Server object
 func NewServer(o Opts) (*Server, error) {
-	conn, err := grpc.Dial(o.PlayerRegistrarAddress, grpc.WithInsecure())
-	if err != nil {
-		return nil, err
-	}
-
 	s := &Server{
-		server:          o.Server,
-		conn:            conn,
-		playerRegistrar: pr.NewPlayerRegistrarClient(conn),
+		playerRegistrarCli: o.playerRegistrarCli,
 	}
 
 	return s, nil
+}
+
+// StartGame starts the game defined in the request
+func (s *Server) StartGame(ctx context.Context, in *gs.StartGameRequest) (*gs.StartGameResponse, error) {
+	fmt.Printf("GetGame %v", in)
+	return nil, status.Error(codes.Unimplemented, "TODO implement StartGame")
 }
 
 // GetGame gets the game details given a GetGameRequest
@@ -66,4 +63,10 @@ func (s *Server) RemovePlayer(ctx context.Context, in *gs.RemovePlayerRequest) (
 func (s *Server) PostVotes(ctx context.Context, in *gs.PostVotesRequest) (*gs.PostVotesResponse, error) {
 	fmt.Printf("PostVotes %v", in)
 	return nil, status.Error(codes.Unimplemented, "TODO implement PostVotes")
+}
+
+// StopGame starts the game defined in the request
+func (s *GameServer) StopGame(ctx context.Context, in *gs.StopGameRequest) (*gs.StopGameResponse, error) {
+	fmt.Printf("StopGame %v", in)
+	return nil, status.Error(codes.Unimplemented, "TODO implement StopGame")
 }

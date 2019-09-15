@@ -11,10 +11,21 @@ import "github.com/sambdavidson/community-chess/src/proto/messages/vote.proto";
 package game_server;
 
 service GameServer {
+    rpc StartGame (StartGameRequest) returns (StartGameResponse);
     rpc GetGame (GetGameRequest) returns (GetGameResponse);
     rpc AddPlayer (AddPlayerRequest) returns (AddPlayerResponse);
     rpc RemovePlayer (RemovePlayerRequest) returns (RemovePlayerResponse);
     rpc PostVotes (PostVotesRequest) returns (PostVotesResponse);
+    rpc StopGame (StopGameRequest) returns (StopGameResponse);
+}
+
+message StartGameRequest {
+    string game_type = 1;
+    messages.Game.Metadata metadata = 2;
+}
+
+message StartGameResponse {
+    messages.Game game = 1;
 }
 
 message GetGameRequest {
@@ -22,7 +33,7 @@ message GetGameRequest {
 }
 
 message GetGameResponse {
-    repeated messages.Game game = 1;
+    messages.Game game = 1;
 }
 
 message AddPlayerRequest {
@@ -46,3 +57,7 @@ message PostVotesRequest {
 }
 
 message PostVotesResponse {}
+
+message StopGameRequest {}
+
+message StopGameResponse {}

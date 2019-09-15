@@ -1,18 +1,37 @@
 /* BUILD
 protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\messages\games\chess.proto
 */
-
 syntax = "proto3";
 
 package games;
 
 message ChessRules {
     bool balancedTeams = 1;
+    // balanceEnforcement defines how balancing will work if balancedTeams is true.
+    // tolerate_difference defines the exact number of max difference between team counts.
+    //   e.g. if tolerate_difference is equal to 3: (team2.size - 3) <= team1.size <= (team2.size + 3) 
+    // tolerate_percent defines the exact percentage from 0.0+ of difference between team counts.
+    //   e.g. if tolerate_percent is equal to 0.3: math.Floor(team2.size * (1.0 - 0.3)) <= team1.size <= math.Ceil(team2.size * (1.0 + 0.3))
+    //           Small numbers example team2.size is 5: 3 <= team1.size <= 7
+    //           Large numbers example team2.size is 1234: 863 <= team1.size <= 1605
+    // When either black or white team are increased:
+    //   these constraints are checked where both black and white must be within the the other team's bounds.
+    // When either black or white are decreased... TODO autobalance?
+    oneof balanceEnforcement {
+        // Must be at least 1
+        int32 tolerate_difference = 2;
+        // Must be at >0
+        float tolerate_percent = 3;
+    }
 }
 
 message ChessState {
     int64 turnEnd = 1;
     repeated ChessRound rounds = 2;
+
+    // Black team is false, White team is true
+    map<string, bool> player_id_to_white_team= 3;
+
 
     message ChessRound {
         string board_fen = 1;
