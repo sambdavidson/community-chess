@@ -26,11 +26,10 @@ message ChessRules {
 }
 
 message ChessState {
-    int64 turnEnd = 1;
-    repeated ChessRound rounds = 2;
+    repeated ChessRound rounds = 1;
 
     // Black team is false, White team is true
-    map<string, bool> player_id_to_white_team= 3;
+    map<string, bool> player_id_to_white_team= 2;
 
 
     message ChessRound {

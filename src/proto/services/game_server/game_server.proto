@@ -17,6 +17,7 @@ service GameServer {
     rpc RemovePlayer (RemovePlayerRequest) returns (RemovePlayerResponse);
     rpc PostVotes (PostVotesRequest) returns (PostVotesResponse);
     rpc StopGame (StopGameRequest) returns (StopGameResponse);
+    rpc ListGames (ListGamesRequest) returns (ListGamesResponse);
 }
 
 message StartGameRequest {
@@ -58,6 +59,14 @@ message PostVotesRequest {
 
 message PostVotesResponse {}
 
-message StopGameRequest {}
+message StopGameRequest {
+    messages.Game.Id game_id = 1;
+}
 
 message StopGameResponse {}
+
+message ListGamesRequest {}
+
+message ListGamesResponse {
+    repeated messages.Game game = 1;
+}

@@ -10,7 +10,7 @@ package messages;
 
 message Game {
     Id id = 2;
-    int64 creation_time = 3;
+    int64 start_time = 3;
     Metadata metadata = 4;
     oneof state {
         games.ChessState chess_state = 1;
@@ -21,7 +21,6 @@ message Game {
     }
 
     message Metadata {
-        int32 version = 1;
         string title = 2;
         Visibility visibility = 3;
         Rules rules = 4;
@@ -41,12 +40,15 @@ message Game {
             }
             message VoteAppliedImmediately {}
             message VoteAppliedAfterTally {
+                // Must be > 3 seconds
                 int32 timeout_seconds = 1;
                 SelectionType selection_type = 2;
+                // If every added player votes, should we still wait?
+                bool wait_full_timeout = 3;
 
                 enum SelectionType {
-                    PROBABILITY = 0;
-                    MOST_VOTES = 1;
+                    MOST_VOTES = 0;
+                    PROBABILITY = 1;
                 }
 
             }
