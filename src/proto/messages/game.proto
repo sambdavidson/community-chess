@@ -9,17 +9,14 @@ import "github.com/sambdavidson/community-chess/src/proto/messages/games/chess.p
 package messages;
 
 message Game {
-    Id id = 2;
+    string id = 1;
     int64 start_time = 3;
     Metadata metadata = 4;
+
     oneof state {
-        games.ChessState chess_state = 1;
+        games.ChessState chess_state = 5;
     }
-
-    message Id {
-        string id = 1;
-    }
-
+    
     message Metadata {
         string title = 2;
         Visibility visibility = 3;

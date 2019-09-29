@@ -77,9 +77,7 @@ func (s *Server) StartGame(ctx context.Context, in *gs.StartGameRequest) (*gs.St
 	}
 
 	s.game = &messages.Game{
-		Id: &messages.Game_Id{
-			Id: s.id,
-		},
+		Id:        s.id,
 		StartTime: time.Now().UnixNano(),
 		Metadata: &messages.Game_Metadata{
 			Title:      in.GetMetadata().GetTitle(),
@@ -109,6 +107,10 @@ func (s *Server) StartGame(ctx context.Context, in *gs.StartGameRequest) (*gs.St
 // GetGame gets the game details given a GetGameRequest
 func (s *Server) GetGame(ctx context.Context, in *gs.GetGameRequest) (*gs.GetGameResponse, error) {
 	fmt.Printf("GetGame %v", in)
+
+	out := &gs.GetGameResponse{
+		&messages.Game{},
+	}
 	return nil, status.Error(codes.Unimplemented, "TODO implement GetGame")
 }
 

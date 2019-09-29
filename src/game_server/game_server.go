@@ -105,7 +105,7 @@ func (s *GameServer) StartGame(ctx context.Context, in *gs.StartGameRequest) (*g
 
 // GetGame gets the game details given a GetGameRequest
 func (s *GameServer) GetGame(ctx context.Context, in *gs.GetGameRequest) (*gs.GetGameResponse, error) {
-	game, ok := s.gameInstances[in.GetGameId().GetId()]
+	game, ok := s.gameInstances[in.GetGameId()]
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "unknown game with id: %s", in.GetGameId().GetId())
 	}
@@ -114,7 +114,7 @@ func (s *GameServer) GetGame(ctx context.Context, in *gs.GetGameRequest) (*gs.Ge
 
 // AddPlayer adds a player to the existing game
 func (s *GameServer) AddPlayer(ctx context.Context, in *gs.AddPlayerRequest) (*gs.AddPlayerResponse, error) {
-	game, ok := s.gameInstances[in.GetGameId().GetId()]
+	game, ok := s.gameInstances[in.GetGameId()]
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "unknown game with id: %s", in.GetGameId().GetId())
 	}
@@ -123,7 +123,7 @@ func (s *GameServer) AddPlayer(ctx context.Context, in *gs.AddPlayerRequest) (*g
 
 // RemovePlayer removes a player from the current game
 func (s *GameServer) RemovePlayer(ctx context.Context, in *gs.RemovePlayerRequest) (*gs.RemovePlayerResponse, error) {
-	game, ok := s.gameInstances[in.GetGameId().GetId()]
+	game, ok := s.gameInstances[in.GetGameId()]
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "unknown game with id: %s", in.GetGameId().GetId())
 	}
@@ -132,7 +132,7 @@ func (s *GameServer) RemovePlayer(ctx context.Context, in *gs.RemovePlayerReques
 
 // PostVotes posts 1+ votes to the current game
 func (s *GameServer) PostVotes(ctx context.Context, in *gs.PostVotesRequest) (*gs.PostVotesResponse, error) {
-	game, ok := s.gameInstances[in.GetGameId().GetId()]
+	game, ok := s.gameInstances[in.GetGameId()]
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "unknown game with id: %s", in.GetGameId().GetId())
 	}
@@ -141,7 +141,7 @@ func (s *GameServer) PostVotes(ctx context.Context, in *gs.PostVotesRequest) (*g
 
 // StopGame starts the game defined in the request
 func (s *GameServer) StopGame(ctx context.Context, in *gs.StopGameRequest) (*gs.StopGameResponse, error) {
-	game, ok := s.gameInstances[in.GetGameId().GetId()]
+	game, ok := s.gameInstances[in.GetGameId()]
 	if !ok {
 		return nil, status.Errorf(codes.NotFound, "unknown game with id: %s", in.GetGameId().GetId())
 	}
@@ -153,9 +153,7 @@ func (s *GameServer) ListGames(ctx context.Context, in *gs.ListGamesRequest) (*g
 	var games []*messages.Game
 	for id, v := range s.gameInstances {
 		out, err := v.GetGame(ctx, &gs.GetGameRequest{
-			GameId: &messages.Game_Id{
-				Id: id,
-			},
+			GameId: id,
 		})
 		if err != nil {
 			return nil, err

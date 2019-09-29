@@ -24,7 +24,7 @@ message RegisterPlayerResponse {
 }
 
 message GetPlayerRequest {
-    messages.Player.Id player_id = 1;
+    string player_id = 1;
 }
 
 message GetPlayerReponse {

@@ -151,7 +151,7 @@ func createPlayerAction(cmdParts []string) {
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 	}
-	knownPlayers[out.GetPlayer().GetId().GetId()] = out.GetPlayer()
+	knownPlayers[out.GetPlayer().GetId()] = out.GetPlayer()
 	activePlayer = out.GetPlayer()
 	fmt.Printf("created, updated active player: %v\n", out)
 }
@@ -163,7 +163,7 @@ func getPlayerAction(cmdParts []string) {
 			fmt.Println("missing player_id, either set an active player or define one.")
 			return
 		}
-		id = activePlayer.GetId().GetId()
+		id = activePlayer.GetId()
 	} else {
 		id = cmdParts[1]
 	}
@@ -171,14 +171,12 @@ func getPlayerAction(cmdParts []string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	out, err := prCli.GetPlayer(ctx, &pr.GetPlayerRequest{
-		PlayerId: &messages.Player_Id{
-			Id: id,
-		},
+		PlayerId: id,
 	})
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 	}
-	knownPlayers[out.GetPlayer().GetId().GetId()] = out.GetPlayer()
+	knownPlayers[out.GetPlayer().GetId()] = out.GetPlayer()
 	activePlayer = out.GetPlayer()
 	fmt.Printf("got, updated active player: %v\n", out)
 }
@@ -230,7 +228,7 @@ func getGameAction(cmdParts []string) {
 			fmt.Println("missing game_id, either set an game_id or define one.")
 			return
 		}
-		id = activeGame.GetId().GetId()
+		id = activeGame.GetId()
 	} else {
 		id = cmdParts[1]
 	}
@@ -238,9 +236,7 @@ func getGameAction(cmdParts []string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	out, err := gsCli.GetGame(ctx, &gs.GetGameRequest{
-		GameId: &messages.Game_Id{
-			Id: id,
-		},
+		GameId: id,
 	})
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
@@ -261,8 +257,8 @@ func addPlayerAction(cmdParts []string) {
 			fmt.Println("missing game_id, either set an active player or define one.")
 			return
 		}
-		pid = activePlayer.GetId().GetId()
-		gid = activeGame.GetId().GetId()
+		pid = activePlayer.GetId()
+		gid = activeGame.GetId()
 	} else {
 		pid = cmdParts[1]
 		gid = cmdParts[2]
@@ -271,12 +267,8 @@ func addPlayerAction(cmdParts []string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	out, err := gsCli.AddPlayer(ctx, &gs.AddPlayerRequest{
-		GameId: &messages.Game_Id{
-			Id: gid,
-		},
-		PlayerId: &messages.Player_Id{
-			Id: pid,
-		},
+		GameId:   gid,
+		PlayerId: pid,
 	})
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
@@ -297,8 +289,8 @@ func removePlayerAction(cmdParts []string) {
 			fmt.Println("missing game_id, either set an active player or define one.")
 			return
 		}
-		pid = activePlayer.GetId().GetId()
-		gid = activeGame.GetId().GetId()
+		pid = activePlayer.GetId()
+		gid = activeGame.GetId()
 	} else {
 		pid = cmdParts[1]
 		gid = cmdParts[2]
@@ -307,12 +299,8 @@ func removePlayerAction(cmdParts []string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	out, err := gsCli.RemovePlayer(ctx, &gs.RemovePlayerRequest{
-		GameId: &messages.Game_Id{
-			Id: gid,
-		},
-		PlayerId: &messages.Player_Id{
-			Id: pid,
-		},
+		GameId:   gid,
+		PlayerId: pid,
 	})
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
@@ -359,7 +347,7 @@ func stopGameAction(cmdParts []string) {
 			fmt.Println("missing game_id, either set an game_id or define one.")
 			return
 		}
-		id = activeGame.GetId().GetId()
+		id = activeGame.GetId()
 	} else {
 		id = cmdParts[1]
 	}
@@ -367,9 +355,7 @@ func stopGameAction(cmdParts []string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	out, err := gsCli.StopGame(ctx, &gs.StopGameRequest{
-		GameId: &messages.Game_Id{
-			Id: id,
-		},
+		GameId: id,
 	})
 	if err != nil {
 		fmt.Printf("error: %v\n", err)

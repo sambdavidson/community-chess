@@ -5,7 +5,6 @@ protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugin
 syntax = "proto3";
 
 import "github.com/sambdavidson/community-chess/src/proto/messages/game.proto";
-import "github.com/sambdavidson/community-chess/src/proto/messages/player.proto";
 import "github.com/sambdavidson/community-chess/src/proto/messages/vote.proto";
 
 package game_server;
@@ -30,7 +29,7 @@ message StartGameResponse {
 }
 
 message GetGameRequest {
-    messages.Game.Id game_id = 1;
+    string game_id = 1;
 }
 
 message GetGameResponse {
@@ -38,29 +37,29 @@ message GetGameResponse {
 }
 
 message AddPlayerRequest {
-    messages.Game.Id game_id = 1;
-    messages.Player.Id player_id = 2;   
+    string game_id = 1;
+    string player_id = 2;   
 }
 
 message AddPlayerResponse {}
 
 message RemovePlayerRequest {
-    messages.Game.Id game_id = 1;
-    messages.Player.Id player_id = 2;
+    string game_id = 1;
+    string player_id = 2;
 }
 
 message RemovePlayerResponse {}
 
 message PostVotesRequest {
-    messages.Game.Id game_id = 1;
-    messages.Player.Id player_id = 2;
+    string game_id = 1;
+    string player_id = 2;
     repeated messages.Vote vote = 3;
 }
 
 message PostVotesResponse {}
 
 message StopGameRequest {
-    messages.Game.Id game_id = 1;
+    string game_id = 1;
 }
 
 message StopGameResponse {}

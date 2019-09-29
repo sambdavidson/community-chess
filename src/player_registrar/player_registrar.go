@@ -72,9 +72,7 @@ func (s *Server) RegisterPlayer(ctx context.Context, in *pb.RegisterPlayerReques
 	id := uuid.New().String()
 	out := &pb.RegisterPlayerResponse{
 		Player: &messages.Player{
-			Id: &messages.Player_Id{
-				Id: id,
-			},
+			Id:           id,
 			CreationTime: time.Now().UnixNano(),
 			NumberSuffix: count + 1,
 			Username:     in.GetUsername(),
@@ -88,7 +86,7 @@ func (s *Server) RegisterPlayer(ctx context.Context, in *pb.RegisterPlayerReques
 // GetPlayer gets an existing player's details
 func (s *Server) GetPlayer(ctx context.Context, in *pb.GetPlayerRequest) (*pb.GetPlayerReponse, error) {
 	log.Printf("GetPlayer: %v\n", in)
-	player, ok := s.players[in.GetPlayerId().Id]
+	player, ok := s.players[in.GetPlayerId()]
 	if !ok {
 		return nil, status.Error(codes.NotFound, "Unknown player")
 	}
