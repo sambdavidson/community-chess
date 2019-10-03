@@ -9,6 +9,7 @@ import "github.com/sambdavidson/community-chess/src/proto/messages/games/chess.p
 package messages;
 
 message Vote {
+    string player_id = 1;
     oneof game_vote {
         games.ChessVote chess_vote = 3;
     }

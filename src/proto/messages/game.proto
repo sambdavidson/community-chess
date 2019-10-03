@@ -16,7 +16,11 @@ message Game {
     oneof state {
         games.ChessState chess_state = 5;
     }
-    
+
+    oneof history {
+        games.ChessHistory chess_history = 6;
+    }
+
     message Metadata {
         string title = 2;
         Visibility visibility = 3;
@@ -53,8 +57,4 @@ message Game {
         }
         
     }
-}
-
-message VoteApplication {
-    string name = 1;
 }

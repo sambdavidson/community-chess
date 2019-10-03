@@ -6,8 +6,8 @@ syntax = "proto3";
 package games;
 
 message ChessRules {
-    bool balancedTeams = 1;
-    // balanceEnforcement defines how balancing will work if balancedTeams is true.
+    bool balanced_teams = 1;
+    // balanceEnforcement defines how balancing will work if balanced_teams is true.
     // tolerate_difference defines the exact number of max difference between team counts.
     //   e.g. if tolerate_difference is equal to 3: (team2.size - 3) <= team1.size <= (team2.size + 3) 
     // tolerate_percent defines the exact percentage from 0.0+ of difference between team counts.
@@ -19,26 +19,50 @@ message ChessRules {
     // When either black or white are decreased... TODO autobalance?
     oneof balanceEnforcement {
         // Must be at least 1
-        int32 tolerate_difference = 2;
+        int64 tolerate_difference = 2;
         // Must be at >0
         float tolerate_percent = 3;
     }
+
+    // Are players allowed to switch between teams.
+    bool team_switching = 4;
 }
 
 message ChessState {
-    repeated ChessRound rounds = 1;
 
-    // Black team is false, White team is true
-    map<string, bool> player_id_to_white_team= 2;
+    int64 white_team_count = 1;
+    int64 black_team_count = 2;
 
+    // Board in the form of Forsyth-Edwards notation
+    string board_fen = 4;
 
-    message ChessRound {
-        string board_fen = 1;
-        map<string, string> player_to_vote_pgn = 2;
-        map<string, int32> vote_pgn_to_count = 3;
+    // Move string in form of Algebraic Notation
+    map<string, int64> move_to_count = 5;
+
+    // Start time of the round.
+    int64 round_start_time = 6;
+    // End time of the round. 
+    int64 round_end_time = 7;
+
+    // Details are much more information dense than necessary for regular client function.
+    // Well be empty unless details are requested by callee.
+    // Typically will only be used by internal APIs.
+    Details details = 8;
+
+    message Details {
+        // Black team is false, White team is true
+        map<string, bool> player_id_to_team_white_is_true = 1;
+        // Move string in form of Algebraic Notation
+        map<string, string> player_to_move = 2;
     }
 }
 
+message ChessHistory {
+    repeated ChessState state_history = 1;
+}
+
 message ChessVote {
-    string move_pgn = 1;
+    int32 round_index = 1;
+    // Move string in form of Algebraic Notation
+    string move = 2;
 }

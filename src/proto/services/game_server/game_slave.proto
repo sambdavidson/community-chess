@@ -1,0 +1,52 @@
+/* BUILD
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\game_server\game_server.proto
+*/
+
+syntax = "proto3";
+
+import "github.com/sambdavidson/community-chess/src/proto/messages/game.proto";
+import "github.com/sambdavidson/community-chess/src/proto/messages/vote.proto";
+
+package game_server;
+
+service GameServerSlave {
+    rpc ChangeAcceptingVotes(ChangeAcceptingVotesRequest) returns (ChangeAcceptingVotesResponse);
+    rpc GetVotes(GetVotesRequest) returns (GetVotesResponse);
+    rpc UpdateMetadata(UpdateMetadataRequest) returns (UpdateMetadataResponse);
+    rpc UpdateState(UpdateStateRequest) returns (UpdateStateResponse);
+}
+
+message ChangeAcceptingVotesRequest {
+    bool accepting_votes = 1;
+}
+
+message ChangeAcceptingVotesResponse {
+    
+}
+
+message GetVotesRequest {
+    string game_id = 1;
+}
+
+message GetVotesResponse {
+    int32 round_index = 1;
+    repeated messages.Vote votes = 2;
+    bool complete = 3;
+
+}
+
+message UpdateMetadataRequest {
+
+}
+
+message UpdateMetadataResponse {
+
+}
+
+message UpdateStateRequest {
+
+}
+
+message UpdateStateResponse {
+
+}

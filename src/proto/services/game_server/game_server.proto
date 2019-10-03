@@ -5,67 +5,81 @@ protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugin
 syntax = "proto3";
 
 import "github.com/sambdavidson/community-chess/src/proto/messages/game.proto";
+import "github.com/sambdavidson/community-chess/src/proto/messages/games/chess.proto";
 import "github.com/sambdavidson/community-chess/src/proto/messages/vote.proto";
 
 package game_server;
 
 service GameServer {
-    rpc StartGame (StartGameRequest) returns (StartGameResponse);
     rpc GetGame (GetGameRequest) returns (GetGameResponse);
-    rpc AddPlayer (AddPlayerRequest) returns (AddPlayerResponse);
-    rpc RemovePlayer (RemovePlayerRequest) returns (RemovePlayerResponse);
-    rpc PostVotes (PostVotesRequest) returns (PostVotesResponse);
-    rpc StopGame (StopGameRequest) returns (StopGameResponse);
-    rpc ListGames (ListGamesRequest) returns (ListGamesResponse);
-}
-
-message StartGameRequest {
-    string game_type = 1;
-    messages.Game.Metadata metadata = 2;
-}
-
-message StartGameResponse {
-    messages.Game game = 1;
+    rpc GetGameMetadata (GetGameMetadataRequest) returns (GetGameMetadataResponse);
+    rpc GetGameState (GetGameStateRequest) returns (GetGameStateResponse);
+    rpc GetGameHistory (GetGameHistoryRequest) returns (GetGameHistoryResponse);
+    rpc Join (JoinRequest) returns (JoinResponse);
+    rpc Leave (LeaveRequest) returns (LeaveResponse);
+    rpc PostVote (PostVoteRequest) returns (PostVoteResponse);
 }
 
 message GetGameRequest {
     string game_id = 1;
+    bool detailed = 2;
 }
 
 message GetGameResponse {
     messages.Game game = 1;
 }
 
-message AddPlayerRequest {
+message GetGameMetadataRequest {
     string game_id = 1;
-    string player_id = 2;   
 }
 
-message AddPlayerResponse {}
+message GetGameMetadataResponse {
+    messages.Game.Metadata metadata = 1;
+}
 
-message RemovePlayerRequest {
+message GetGameStateRequest {
+    string game_id = 1;
+}
+
+message GetGameStateResponse {
+    oneof state {
+        games.ChessState chess_state = 1;
+    }
+}
+
+message GetGameHistoryRequest {
+    string game_id = 1;
+}
+
+message GetGameHistoryResponse {
+    oneof history {
+        games.ChessHistory chess_history = 1;
+    }
+}
+
+message JoinRequest {
+    string game_id = 1;
+    string player_id = 2;
+    oneof game_specific_data {
+        ChessData chess_data = 3;
+    }
+    message ChessData {
+        bool white_team = 1;
+    }
+}
+
+message JoinResponse {}
+
+message LeaveRequest {
     string game_id = 1;
     string player_id = 2;
 }
 
-message RemovePlayerResponse {}
+message LeaveResponse {}
 
-message PostVotesRequest {
+message PostVoteRequest {
     string game_id = 1;
-    string player_id = 2;
-    repeated messages.Vote vote = 3;
+    messages.Vote vote = 2;
 }
 
-message PostVotesResponse {}
-
-message StopGameRequest {
-    string game_id = 1;
-}
-
-message StopGameResponse {}
-
-message ListGamesRequest {}
-
-message ListGamesResponse {
-    repeated messages.Game game = 1;
-}
+message PostVoteResponse {}
