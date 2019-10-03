@@ -15,7 +15,7 @@ service GameRegistrar {
 }
 
 message NewGameRequest {
-    string game_type = 1;
+    messages.Game.Type game_type = 1;
     messages.Game.Metadata metadata = 2;
 }
 

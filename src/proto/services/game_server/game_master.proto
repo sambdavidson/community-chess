@@ -4,29 +4,48 @@ protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugin
 
 syntax = "proto3";
 
-import "github.com/sambdavidson/community-chess/src/proto/messages/vote.proto";
+import "github.com/sambdavidson/community-chess/src/proto/services/game_server/game_server.proto";
 
 package game_server;
 
 // GameServerMaster is an internal only service for coordinating a single game.
+// These RPCs can be generally trusted.
+// Votes are requested by masters from slaves periodically. 
 service GameServerMaster {
+    // AddSlave adds a new slave that will serve this receiving master.
     rpc AddSlave (AddSlaveRequest) returns (AddSlaveResponse);
+
+    // AddPlayers is called by a slave and adds 1+ players to the game.
     rpc AddPlayers (AddPlayersRequest) returns (AddPlayersResponse);
+
+    // RemovePlayers is called by a slave and removes 1+ players from the game.
     rpc RemovePlayers (RemovePlayersRequest) returns (RemovePlayersResponse);
+
+    // StopGame is called by a slave or other (TODO) authority to kill a game.
     rpc StopGame (StopGameRequest) returns (StopGameResponse);
 }
 
 message AddSlaveRequest {
-    // Slave details and connection endpoint
+    // This will probably work differently in a networked cloud / when infra is figured out. 
+    string location = 1;
 }
 
 message AddSlaveResponse {}
 
-message AddPlayersRequest {}
+message AddPlayersRequest {
+    repeated NewPlayer players = 1;
+    
+    message NewPlayer {
+        string player_id = 1;
+        JoinRequest request = 2;
+    }
+}
 
 message AddPlayersResponse {}
 
-message RemovePlayersRequest {}
+message RemovePlayersRequest {
+    repeated string player_ids = 1;
+}
 
 message RemovePlayersResponse{}
 

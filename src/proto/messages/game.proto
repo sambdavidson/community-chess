@@ -9,37 +9,72 @@ import "github.com/sambdavidson/community-chess/src/proto/messages/games/chess.p
 package messages;
 
 message Game {
-    string id = 1;
+    // Type of game this is, see Type message for currently supported list of types.
+    Type type = 1;
+
+    // When adding a new type add an enum here and add its appropriate messages
+    // to all the oneof fields below.
+    enum Type {
+        CHESS = 0;
+    }
+
+    // UUIDv4 uniquely identifying the game. Used as a key for many requests
+    string id = 2;
+    
+    // Start time of this game in UnixNanos since Epoch 
     int64 start_time = 3;
-    Metadata metadata = 4;
+    
+    // This will probably need to be changed when on a networked cloud. 
+    // For now it will just be localhost:{port}. This should eventually point
+    // to a load balancer which will direct traffic to one of many slaves,
+    // or just a master server if traffic is low.
+    string location = 4;
+    
+    // Metadata of this game.
+    Metadata metadata = 5;
 
-    oneof state {
-        games.ChessState chess_state = 5;
-    }
+    // State of this game.
+    State state = 6;
 
-    oneof history {
-        games.ChessHistory chess_history = 6;
-    }
+    // History of this game.
+    History history = 7;
 
+    // Metadata contains various potentially changing details common to all games.
+    // The contents herein will mostly be set on game creation and remain static.
     message Metadata {
-        string title = 2;
+
+        // Title of the game that will be shown publicly.
+        string title = 1;
+
+        // Description of the game, useful if players want to create custom
+        // games with enticing descriptiong or silly rules.
+        string description = 2;
+
+        // Visibility of the game.
         Visibility visibility = 3;
-        Rules rules = 4;
 
         enum Visibility {
             OPEN = 0;
             INVITE_ONLY = 1;
         }
 
+        // Non-game-specific rules for this game.
+        Rules rules = 4;
+
         message Rules {
+
+            // How votes will be counted. See the comments below.
             oneof vote_application {
                 VoteAppliedImmediately vote_applied_immediately = 1;
                 VoteAppliedAfterTally vote_applied_after_tally = 2;
             }
-            oneof game_specific_rules {
-                games.ChessRules chess_rules = 3;
-            }
+
+            // A vote is essentially an action that will be applied immediately.
+            // Think the default Twitch Plays Pokemon mode.
             message VoteAppliedImmediately {}
+
+            // A vote that will be tallied after some timeout and the actual 
+            // game-state changing move will selected based on that tally.
             message VoteAppliedAfterTally {
                 // Must be > 3 seconds
                 int32 timeout_seconds = 1;
@@ -53,8 +88,33 @@ message Game {
                 }
 
             }
+
+            oneof game_specific {
+                games.ChessRules chess_rules = 3;
+            }
             
         }
         
+    }
+
+    // State of the current game. Specific to whatever game is being played.
+    message State {
+        oneof game {
+            games.ChessState chess_state = 6;
+        }
+    }
+
+    // History of the current game, usualy containing a list of previous states.
+    message History {
+        oneof game {
+            games.ChessHistory chess_history = 7;
+        }
+    }
+
+    // Fields that should be filled out for any player wishing to join a game.
+    message NewPlayerFields {
+        oneof game {
+            games.ChessNewPlayerFields chess_fields = 3;
+        }
     }
 }

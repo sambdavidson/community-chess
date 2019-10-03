@@ -66,3 +66,7 @@ message ChessVote {
     // Move string in form of Algebraic Notation
     string move = 2;
 }
+
+message ChessNewPlayerFields {
+    bool white_team = 1;
+}

@@ -5,7 +5,6 @@ protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugin
 syntax = "proto3";
 
 import "github.com/sambdavidson/community-chess/src/proto/messages/game.proto";
-import "github.com/sambdavidson/community-chess/src/proto/messages/games/chess.proto";
 import "github.com/sambdavidson/community-chess/src/proto/messages/vote.proto";
 
 package game_server;
@@ -21,65 +20,57 @@ service GameServer {
 }
 
 message GetGameRequest {
-    string game_id = 1;
-    bool detailed = 2;
+    // Whether to include comprehensive data-intensive lists of players and
+    // the like. This is meant to allow for lightweight frequent RPCs but
+    // detailed data-ful RPCs when needed by either clients or internal services.
+    bool detailed = 1;
 }
 
 message GetGameResponse {
     messages.Game game = 1;
 }
 
-message GetGameMetadataRequest {
-    string game_id = 1;
-}
+message GetGameMetadataRequest {}
 
 message GetGameMetadataResponse {
+    // The metadata of the game.
     messages.Game.Metadata metadata = 1;
 }
 
 message GetGameStateRequest {
-    string game_id = 1;
+    // Whether to include comprehensive data-intensive lists of players and
+    // the like. This is meant to allow for lightweight frequent RPCs but
+    // detailed data-ful RPCs when needed by either clients or internal services.
+    bool detailed = 1;
 }
 
 message GetGameStateResponse {
-    oneof state {
-        games.ChessState chess_state = 1;
-    }
+    messages.Game.State state = 1;
 }
 
 message GetGameHistoryRequest {
-    string game_id = 1;
+    // Whether to include comprehensive data-intensive lists of players and
+    // the like. This is meant to allow for lightweight frequent RPCs but
+    // detailed data-ful RPCs when needed by either clients or internal services.
+    bool detailed = 1;
 }
 
 message GetGameHistoryResponse {
-    oneof history {
-        games.ChessHistory chess_history = 1;
-    }
+    messages.Game.History history = 1;
 }
 
 message JoinRequest {
-    string game_id = 1;
-    string player_id = 2;
-    oneof game_specific_data {
-        ChessData chess_data = 3;
-    }
-    message ChessData {
-        bool white_team = 1;
-    }
+    messages.Game.NewPlayerFields fields = 1;
 }
 
 message JoinResponse {}
 
-message LeaveRequest {
-    string game_id = 1;
-    string player_id = 2;
-}
+message LeaveRequest {}
 
 message LeaveResponse {}
 
 message PostVoteRequest {
-    string game_id = 1;
-    messages.Vote vote = 2;
+    messages.Vote vote = 1;
 }
 
 message PostVoteResponse {}
