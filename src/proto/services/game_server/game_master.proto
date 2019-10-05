@@ -1,10 +1,9 @@
 /* BUILD
 protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\game_server\game_master.proto
 */
-
 syntax = "proto3";
 
-import "github.com/sambdavidson/community-chess/src/proto/services/game_server/game_server.proto";
+import "github.com/sambdavidson/community-chess/src/proto/messages/game.proto";
 
 package game_server;
 
@@ -38,6 +37,10 @@ message AddPlayersRequest {
     message NewPlayer {
         string player_id = 1;
         JoinRequest request = 2;
+
+        message JoinRequest {
+            messages.Game.NewPlayerFields fields = 1;
+        }
     }
 }
 
