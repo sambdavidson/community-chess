@@ -3,6 +3,8 @@ package gamemaster
 import (
 	"fmt"
 
+	"github.com/sambdavidson/community-chess/src/gameserver/gameimplementations/chess"
+	"github.com/sambdavidson/community-chess/src/proto/messages"
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 	"google.golang.org/grpc"
@@ -26,9 +28,13 @@ type Controller struct {
 type GameImplementation interface {
 	gs.GameServerServer
 	gs.GameServerMasterServer
+	Enable()
 }
 
 var (
+	gameImplementations = map[messages.Game_Type]GameImplementation{
+		messages.Game_CHESS: &chess.Implementation{},
+	}
 	controller *Controller
 )
 

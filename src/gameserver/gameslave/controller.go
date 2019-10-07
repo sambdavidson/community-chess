@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/sambdavidson/community-chess/src/proto/messages"
+
+	chess "github.com/sambdavidson/community-chess/src/gameserver/gameimplementations/chess"
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 	"google.golang.org/grpc"
@@ -30,9 +33,13 @@ type Controller struct {
 type GameImplementation interface {
 	gs.GameServerServer
 	gs.GameServerSlaveServer
+	Enable()
 }
 
 var (
+	gameImplementations = map[messages.Game_Type]GameImplementation{
+		messages.Game_CHESS: &chess.Implementation{},
+	}
 	controller *Controller
 )
 
