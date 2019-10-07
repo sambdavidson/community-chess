@@ -26,6 +26,12 @@ type Controller struct {
 	masterConn *grpc.ClientConn
 }
 
+// GameImplementation joins a GameServerServer and GameServerSlaveServer.
+type GameImplementation interface {
+	gs.GameServerServer
+	gs.GameServerSlaveServer
+}
+
 var (
 	controller *Controller
 )
