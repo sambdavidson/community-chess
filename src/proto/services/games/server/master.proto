@@ -1,16 +1,19 @@
 /* BUILD
-protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\game_server\game_master.proto
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\games\server\master.proto
 */
 syntax = "proto3";
 
 import "github.com/sambdavidson/community-chess/src/proto/messages/game.proto";
 
-package game_server;
+package server;
 
 // GameServerMaster is an internal only service for coordinating a single game.
 // These RPCs can be generally trusted.
 // Votes are requested by masters from slaves periodically. 
 service GameServerMaster {
+    // Initialize initializes the game server with a game and configuration.
+    rpc Initialize (InitializeRequest) returns (InitializeResponse);
+
     // AddSlave adds a new slave that will serve this receiving master.
     rpc AddSlave (AddSlaveRequest) returns (AddSlaveResponse);
 
@@ -24,12 +27,20 @@ service GameServerMaster {
     rpc StopGame (StopGameRequest) returns (StopGameResponse);
 }
 
-message AddSlaveRequest {
-    // This will probably work differently in a networked cloud / when infra is figured out. 
-    string location = 1;
+message InitializeRequest {
+    messages.Game game = 1;
 }
 
-message AddSlaveResponse {}
+message InitializeResponse {}
+
+message AddSlaveRequest {
+    // This will probably work differently in a networked cloud / when infra is figured out. 
+    string return_address = 1;
+}
+
+message AddSlaveResponse {
+    messages.Game game = 1;
+}
 
 message AddPlayersRequest {
     repeated NewPlayer players = 1;

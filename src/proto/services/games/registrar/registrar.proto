@@ -1,12 +1,12 @@
 /* BUILD
-protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\game_registrar\game_registrar.proto
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\games\registrar\registrar.proto
 */
 
 syntax = "proto3";
 
 import "github.com/sambdavidson/community-chess/src/proto/messages/game.proto";
 
-package game_registrar;
+package registrar;
 
 service GameRegistrar {
     rpc NewGame (NewGameRequest) returns (NewGameResponse);

@@ -1,12 +1,12 @@
 /* BUILD
-protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\game_server\game_server.proto
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\games\server\slave.proto
 */
 
 syntax = "proto3";
 
 import "github.com/sambdavidson/community-chess/src/proto/messages/vote.proto";
 
-package game_server;
+package server;
 
 service GameServerSlave {
     rpc ChangeAcceptingVotes(ChangeAcceptingVotesRequest) returns (ChangeAcceptingVotesResponse);
