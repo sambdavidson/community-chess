@@ -7,23 +7,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Returns a grpc error if something is encountered.
-func validateGenericMetadata(m *messages.Game_Metadata) error {
-	if m.GetTitle() == "" {
-		return status.Errorf(codes.InvalidArgument, "missing title")
-	}
-	r := m.GetRules()
-	if r.GetVoteAppliedAfterTally() != nil {
-		if r.GetVoteAppliedAfterTally().GetTimeoutSeconds() < 3 {
-			return status.Errorf(codes.InvalidArgument, "timeout too short, must be 3 or more seconds")
-		}
-	} else if r.GetVoteAppliedImmediately() == nil {
-		return status.Errorf(codes.InvalidArgument, "missing vote application oneof")
-	}
-
-	return nil
-}
-
 func validateChessRules(r *games.ChessRules) error {
 	if r == nil {
 		return status.Errorf(codes.InvalidArgument, "missing chess specific rules")
