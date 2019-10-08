@@ -3,21 +3,26 @@ package chess
 import (
 	"context"
 	"log"
+	"sync"
 
+	"github.com/sambdavidson/community-chess/src/proto/messages"
+
+	ch "github.com/notnil/chess"
 	pb "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 )
 
 // Implementation is an implementation of chess for use by both the master and slave
-type Implementation struct{}
+type Implementation struct {
+	gameMux sync.Mutex
+	game    *ch.Game
 
-func (i *Implementation) Enable() {
+	playersMux sync.Mutex
+	// player ID to is_white_team
+	players map[string]bool
 
-}
-
-// Game gets this game.
-func (i *Implementation) Game(ctx context.Context, in *pb.GameRequest) (*pb.GameResponse, error) {
-	log.Println("GetGame", in)
-	return &pb.GameResponse{}, nil
+	// Game proto stuff, the state is built dynamically.
+	metadata *messages.Game_Metadata
+	history  *messages.Game_History
 }
 
 // Metadata gets this game's metadata.
@@ -36,18 +41,6 @@ func (i *Implementation) State(ctx context.Context, in *pb.StateRequest) (*pb.St
 func (i *Implementation) History(ctx context.Context, in *pb.HistoryRequest) (*pb.HistoryResponse, error) {
 	log.Println("GetGameHistory", in)
 	return &pb.HistoryResponse{}, nil
-}
-
-// Join joins this game.
-func (i *Implementation) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResponse, error) {
-	log.Println("Join", in)
-	return &pb.JoinResponse{}, nil
-}
-
-// Leave leaves this game.
-func (i *Implementation) Leave(ctx context.Context, in *pb.LeaveRequest) (*pb.LeaveResponse, error) {
-	log.Println("Leave", in)
-	return &pb.LeaveResponse{}, nil
 }
 
 // PostVote posts a vote to this game.

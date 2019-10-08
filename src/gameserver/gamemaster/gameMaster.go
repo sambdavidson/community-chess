@@ -21,7 +21,15 @@ type GameServerMaster struct {
 // Initialize initializes this server to run the game defined in InitializeRequest.
 func (s *GameServerMaster) Initialize(ctx context.Context, in *pb.InitializeRequest) (*pb.InitializeResponse, error) {
 	log.Println("Initialize", in)
-	return &pb.InitializeResponse{}, nil
+	if game == nil {
+		var ok bool
+		if game, ok = gameImplementations[in.GetGame().GetType()]; !ok {
+			return nil, status.Errorf(codes.InvalidArgument, "unknown game type: %v", in.GetGame().GetType())
+		}
+	} else {
+		return nil, status.Error(codes.FailedPrecondition, "this master is already initialized")
+	}
+	return game.Initialize(ctx, in)
 }
 
 // AddSlave is called by a GameServerSlave to request to be accepted as a valid slave for this game.

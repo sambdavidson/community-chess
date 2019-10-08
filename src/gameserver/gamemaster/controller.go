@@ -28,13 +28,14 @@ type Controller struct {
 type GameImplementation interface {
 	gs.GameServerServer
 	gs.GameServerMasterServer
-	Enable()
 }
 
 var (
 	gameImplementations = map[messages.Game_Type]GameImplementation{
 		messages.Game_CHESS: &chess.Implementation{},
 	}
+
+	game       GameImplementation
 	controller *Controller
 )
 
