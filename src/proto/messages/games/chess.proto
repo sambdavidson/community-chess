@@ -39,9 +39,9 @@ message ChessState {
     // Move string in form of Algebraic Notation
     map<string, int64> move_to_count = 5;
 
-    // Start time of the round.
+    // Start time of the round in Nanos since EPOCH.
     int64 round_start_time = 6;
-    // End time of the round. 
+    // End time of the round in Nanos since EPOCH.
     int64 round_end_time = 7;
 
     // Details are much more information dense than necessary for regular client function.
@@ -49,9 +49,11 @@ message ChessState {
     // Typically will only be used by internal APIs.
     Details details = 8;
 
+    int32 round_index = 9;
+
     message Details {
-        // Black team is false, White team is true
-        map<string, bool> player_id_to_team_white_is_true = 1;
+        // White team is true, Black team is false
+        map<string, bool> player_id_to_team = 1;
         // Move string in form of Algebraic Notation
         map<string, string> player_to_move = 2;
     }

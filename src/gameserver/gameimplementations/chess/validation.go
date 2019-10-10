@@ -1,7 +1,7 @@
 package chess
 
 import (
-	"github.com/sambdavidson/community-chess/src/proto/messages"
+	ch "github.com/notnil/chess"
 	"github.com/sambdavidson/community-chess/src/proto/messages/games"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -23,4 +23,23 @@ func validateChessRules(r *games.ChessRules) error {
 		return nil
 	}
 	return status.Errorf(codes.InvalidArgument, "balance enforcement undefined")
+}
+
+func validateChessState(s *games.ChessState, details bool) error {
+	if s == nil {
+		return status.Errorf(codes.InvalidArgument, "missing chess state")
+	}
+	_, err := ch.FEN(s.GetBoardFen())
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, "bad state FEN: %q", s.GetBoardFen())
+	}
+	if s.GetRoundIndex() < 1 {
+		return status.Errorf(codes.InvalidArgument, "round index %d cannot be less than 1", s.GetRoundIndex())
+	}
+	if details {
+		if s.GetDetails() == nil {
+			return status.Errorf(codes.InvalidArgument, "missing detailed state")
+		}
+	}
+	return nil
 }
