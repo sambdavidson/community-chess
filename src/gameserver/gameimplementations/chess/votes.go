@@ -2,7 +2,6 @@ package chess
 
 import (
 	"context"
-	"log"
 
 	"github.com/sambdavidson/community-chess/src/proto/messages/games"
 
@@ -16,7 +15,6 @@ import (
 
 // ChangeAcceptingVotes is called by GameServerMasters to set this GameServerSlave to no longer accept votes. Typically done at end of a voting round.
 func (i *Implementation) ChangeAcceptingVotes(ctx context.Context, in *pb.ChangeAcceptingVotesRequest) (*pb.ChangeAcceptingVotesResponse, error) {
-	log.Println("ChangeAcceptingVotes", in)
 	i.moveMux.Lock()
 	defer i.moveMux.Unlock()
 	i.acceptingVotes = in.GetAcceptingVotes()
@@ -25,7 +23,6 @@ func (i *Implementation) ChangeAcceptingVotes(ctx context.Context, in *pb.Change
 
 // GetVotes is called by GameServerMasters get all votes received by this GameServerSlave for the current round.
 func (i *Implementation) GetVotes(ctx context.Context, in *pb.GetVotesRequest) (*pb.GetVotesResponse, error) {
-	log.Println("GetVotes", in)
 	i.moveMux.Lock()
 	defer i.moveMux.Unlock()
 
@@ -51,7 +48,6 @@ func (i *Implementation) GetVotes(ctx context.Context, in *pb.GetVotesRequest) (
 
 // PostVote posts a vote to this game.
 func (i *Implementation) PostVote(ctx context.Context, in *pb.PostVoteRequest) (*pb.PostVoteResponse, error) {
-	log.Println("PostVote", in)
 	if in.GetVote().GetChessVote().GetRoundIndex() != i.roundIndex {
 		return nil, status.Errorf(codes.InvalidArgument, "bad round index %d; current round %d", in.GetVote().GetChessVote().GetRoundIndex(), i.roundIndex)
 	}

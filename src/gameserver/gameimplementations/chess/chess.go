@@ -2,7 +2,6 @@ package chess
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 
@@ -40,7 +39,7 @@ type Implementation struct {
 
 	// Game proto stuff, the state is built dynamically.
 	metadata *messages.Game_Metadata
-	history  *messages.Game_History
+	history  *games.ChessHistory
 }
 
 // resetWithState resets all the state variables of this chess implementation and updates them to the input state.
@@ -63,7 +62,6 @@ func (i *Implementation) resetWithState(s *games.ChessState) {
 
 // Initialize initializes this server to run the game defined in InitializeRequest.
 func (i *Implementation) Initialize(ctx context.Context, in *pb.InitializeRequest) (*pb.InitializeResponse, error) {
-	log.Println("Initialize Chess", in)
 	if err := validateChessRules(in.GetGame().GetMetadata().GetRules().GetChessRules()); err != nil {
 		return nil, err
 	}
@@ -73,21 +71,19 @@ func (i *Implementation) Initialize(ctx context.Context, in *pb.InitializeReques
 
 	i.resetWithState(in.GetGame().GetState().GetChessState())
 	i.metadata = in.GetGame().GetMetadata()
-	i.history = in.GetGame().GetHistory()
+	i.history = in.GetGame().GetHistory().GetChessHistory()
 	i.initialized = true
 	return &pb.InitializeResponse{}, nil
 }
 
 // UpdateMetadata is called by GameServerMasters to update this slave's metadata.
 func (i *Implementation) UpdateMetadata(ctx context.Context, in *pb.UpdateMetadataRequest) (*pb.UpdateMetadataResponse, error) {
-	log.Println("UpdateMetadata", in)
 	i.metadata = in.GetMetadata()
 	return nil, status.Error(codes.Unimplemented, "todo")
 }
 
 // UpdateState is called by GameServerMasters to update this slave's state of the game.
 func (i *Implementation) UpdateState(ctx context.Context, in *pb.UpdateStateRequest) (*pb.UpdateStateResponse, error) {
-	log.Println("UpdateState", in)
 	validateChessState(in.GetState().GetChessState(), true)
 
 	i.gameMux.Lock()

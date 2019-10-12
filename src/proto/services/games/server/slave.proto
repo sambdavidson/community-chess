@@ -32,7 +32,6 @@ message GetVotesResponse {
     int32 round_index = 1;
     repeated messages.Vote votes = 2;
     bool complete = 3;
-
 }
 
 message UpdateMetadataRequest {

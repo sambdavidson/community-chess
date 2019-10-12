@@ -14,7 +14,6 @@ import (
 
 // AddPlayers is called by a GameServerSlave to request 1+ player(s) be added to this game.
 func (i *Implementation) AddPlayers(ctx context.Context, in *pb.AddPlayersRequest) (*pb.AddPlayersResponse, error) {
-	log.Println("AddPlayers", in)
 	i.teamsMux.Lock()
 	defer i.teamsMux.Unlock()
 
@@ -56,8 +55,6 @@ func (i *Implementation) AddPlayers(ctx context.Context, in *pb.AddPlayersReques
 
 // RemovePlayers is called by a GameServerSlave to request 1+ player(s) be removed from this game.
 func (i *Implementation) RemovePlayers(ctx context.Context, in *pb.RemovePlayersRequest) (*pb.RemovePlayersResponse, error) {
-	log.Println("RemovePlayers", in)
-
 	i.teamsMux.Lock()
 	defer i.teamsMux.Unlock()
 

@@ -11,6 +11,7 @@ import (
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 )
 
 // Opts contains intialization options and variables for a new GameServerSlave.
@@ -40,9 +41,19 @@ var (
 		messages.Game_CHESS: &chess.Implementation{},
 	}
 
-	game       GameImplementation
-	controller *Controller
+	game GameImplementation
+	// Missing state, history, and game-specific metadata.
+	partialGameProto *messages.Game
+	controller       *Controller
 )
+
+// Returns GRPC error if the slave is not yet ready to receieve RPCS.
+// TODO SAM NEXT: Have this be called for every RPC in a clean way.
+func ready() error {
+	if partialGameProto == nil || game == nil {
+		return status.Errof(codes.Unavailable, "not yet available")
+	}
+}
 
 // NewGameSlaveController todo
 func NewGameSlaveController(opts Opts) (*Controller, error) {

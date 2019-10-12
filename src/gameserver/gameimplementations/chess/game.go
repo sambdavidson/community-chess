@@ -2,7 +2,6 @@ package chess
 
 import (
 	"context"
-	"log"
 
 	"github.com/sambdavidson/community-chess/src/proto/messages"
 
@@ -13,7 +12,6 @@ import (
 
 // Metadata gets this game's metadata.
 func (i *Implementation) Metadata(ctx context.Context, in *pb.MetadataRequest) (*pb.MetadataResponse, error) {
-	log.Println("GetGameMetadata", in)
 	return &pb.MetadataResponse{
 		Metadata: i.metadata,
 	}, nil
@@ -21,7 +19,6 @@ func (i *Implementation) Metadata(ctx context.Context, in *pb.MetadataRequest) (
 
 // State gets this game's state.
 func (i *Implementation) State(ctx context.Context, in *pb.StateRequest) (*pb.StateResponse, error) {
-	log.Println("GetGameState", in)
 	var details *games.ChessState_Details
 	if in.GetDetailed() {
 		details = &games.ChessState_Details{
@@ -49,8 +46,11 @@ func (i *Implementation) State(ctx context.Context, in *pb.StateRequest) (*pb.St
 
 // History gets this game's history.
 func (i *Implementation) History(ctx context.Context, in *pb.HistoryRequest) (*pb.HistoryResponse, error) {
-	log.Println("GetGameHistory", in)
 	return &pb.HistoryResponse{
-		History: i.history,
+		History: &messages.Game_History{
+			Game: &messages.Game_History_ChessHistory{
+				ChessHistory: i.history,
+			},
+		},
 	}, nil
 }

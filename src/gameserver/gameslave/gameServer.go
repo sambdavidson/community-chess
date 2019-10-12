@@ -1,6 +1,7 @@
 package gameslave
 
 import (
+	"google.golang.org/grpc/codes"
 	"context"
 	"log"
 
@@ -16,7 +17,11 @@ type GameServer struct {
 // Game gets this game.
 func (s *GameServer) Game(ctx context.Context, in *pb.GameRequest) (*pb.GameResponse, error) {
 	log.Println("GetGame", in)
-	return &pb.GameResponse{}, nil
+	return &pb.GameResponse{
+		Game: &messages.Game{
+
+		}
+	}, nil
 }
 
 // Metadata gets this game's metadata.
