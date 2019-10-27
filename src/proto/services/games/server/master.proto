@@ -55,13 +55,17 @@ message AddPlayersRequest {
     }
 }
 
-message AddPlayersResponse {}
+message AddPlayersResponse {
+    messages.Game.State state = 1;
+}
 
 message RemovePlayersRequest {
     repeated string player_ids = 1;
 }
 
-message RemovePlayersResponse{}
+message RemovePlayersResponse{
+    messages.Game.State state = 1;
+}
 
 message StopGameRequest {}
 

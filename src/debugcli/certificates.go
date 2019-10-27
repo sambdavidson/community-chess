@@ -12,30 +12,17 @@ import (
 	"net"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/sambdavidson/community-chess/src/lib/tlsca"
 )
 
-func gameSlaveTLSConfig(instanceID, gameID uuid.UUID) (*tls.Config, error) {
-	return tlsConfig(instanceID, gameID, tlsca.GameSlave)
-}
-
-func gameMasterTLSConfig(instanceID, gameID uuid.UUID) (*tls.Config, error) {
-	return tlsConfig(instanceID, gameID, tlsca.GameMaster)
-}
-
-func tlsConfig(instanceID, gameID uuid.UUID, serverType tlsca.SAN) (*tls.Config, error) {
+func clientTLSConfig() (*tls.Config, error) {
 	certTmpl := &x509.Certificate{
 		Subject: pkix.Name{
-			CommonName: instanceID.String(),
+			CommonName: "debugcli",
 		},
 		SerialNumber: big.NewInt(time.Now().Unix()),
 		DNSNames: []string{
 			"localhost", // The address of services will need to be figured out and injected here.
-			gameID.String(),
-			serverType.String(),
-			tlsca.GameServer.String(),
 		},
 		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
 		NotBefore:   time.Now(),

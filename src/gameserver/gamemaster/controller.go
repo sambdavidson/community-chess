@@ -15,6 +15,7 @@ import (
 
 // Opts contains intialization options and variables for a new GameServerMaster
 type Opts struct {
+	InstanceID             string
 	GameID                 string
 	PlayerRegistrarAddress string
 	ServerTLSConfig        *tls.Config
@@ -26,10 +27,8 @@ type Controller struct {
 	gameServer       *GameServer
 	gameServerMaster *GameServerMaster
 
-	slaveClis  []gs.GameServerSlaveClient
 	slaveConns []*grpc.ClientConn
 
-	playerRegistarCli   pr.PlayersRegistrarClient
 	playerRegistrarConn *grpc.ClientConn
 }
 
@@ -44,7 +43,8 @@ var (
 		messages.Game_CHESS: &chess.Implementation{},
 	}
 
-	id              string
+	instanceID      string
+	gameID          string
 	game            GameImplementation
 	controller      *Controller
 	masterTLSConfig *tls.Config
@@ -55,7 +55,8 @@ func NewGameMasterController(opts Opts) (*Controller, error) {
 	if controller != nil {
 		return nil, fmt.Errorf("GameMaster Controller already initialized")
 	}
-	id = opts.GameID
+	instanceID = opts.InstanceID
+	gameID = opts.GameID
 	masterTLSConfig = opts.MasterTLSConfig
 
 	playerRegistrarConn, err := grpc.Dial(opts.PlayerRegistrarAddress, grpc.WithTransportCredentials(credentials.NewTLS(masterTLSConfig)))
@@ -63,15 +64,14 @@ func NewGameMasterController(opts Opts) (*Controller, error) {
 		log.Fatalf("failed to connect: %v", err)
 	}
 	playerRegistrarCli := pr.NewPlayersRegistrarClient(playerRegistrarConn)
-
 	controller = &Controller{
 		gameServer: &GameServer{
 			playersRegistrarCli: playerRegistrarCli,
 		},
 		gameServerMaster: &GameServerMaster{
 			playersRegistrarCli: playerRegistrarCli,
+			slaves:              map[string]gs.GameServerSlaveClient{},
 		},
-		playerRegistarCli:   playerRegistrarCli,
 		playerRegistrarConn: playerRegistrarConn,
 	}
 	return controller, nil
@@ -89,6 +89,9 @@ func (c *Controller) GameServerMasterInstance() *GameServerMaster {
 
 // Close all open connections
 func (c *Controller) Close() {
+	if c.playerRegistrarConn != nil {
+		c.playerRegistrarConn.Close()
+	}
 	for _, conn := range c.slaveConns {
 		conn.Close()
 	}

@@ -50,7 +50,10 @@ func (i *Implementation) AddPlayers(ctx context.Context, in *pb.AddPlayersReques
 
 	}
 
-	return &pb.AddPlayersResponse{}, nil
+	res, err := i.State(ctx, &pb.StateRequest{Detailed: false})
+	return &pb.AddPlayersResponse{
+		State: res.State,
+	}, err
 }
 
 // RemovePlayers is called by a GameServerSlave to request 1+ player(s) be removed from this game.
@@ -67,7 +70,11 @@ func (i *Implementation) RemovePlayers(ctx context.Context, in *pb.RemovePlayers
 			log.Printf("Removing already removed player %s\n", playerID)
 		}
 	}
-	return &pb.RemovePlayersResponse{}, nil
+
+	res, err := i.State(ctx, &pb.StateRequest{Detailed: false})
+	return &pb.RemovePlayersResponse{
+		State: res.State,
+	}, err
 }
 
 func validateNewTeamSizes(white, black int64, rules *games.ChessRules) error {

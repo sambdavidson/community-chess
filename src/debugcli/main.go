@@ -1,5 +1,5 @@
 /* BUILD and RUN
-go run .\src\front_end
+go run .\src\debugcli
 */
 
 // Package main implements a simple front_end client for interacting with the various services through a CLI.
@@ -19,8 +19,8 @@ import (
 	"github.com/sambdavidson/community-chess/src/proto/messages/games"
 
 	"github.com/sambdavidson/community-chess/src/proto/messages"
-	gs "github.com/sambdavidson/community-chess/src/proto/services/game_server"
-	pr "github.com/sambdavidson/community-chess/src/proto/services/player_registrar"
+	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
+	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 	"google.golang.org/grpc"
 )
 
@@ -38,7 +38,7 @@ var (
 	gsConn       *grpc.ClientConn
 	gsCli        gs.GameServerClient
 	prConn       *grpc.ClientConn
-	prCli        pr.PlayerRegistrarClient
+	prCli        pr.PlayersRegistrarClient
 	commands     map[string]command
 	knownPlayers = map[string]*messages.Player{}
 	activePlayer *messages.Player
@@ -110,12 +110,12 @@ func getGameServer() (*grpc.ClientConn, gs.GameServerClient) {
 	return conn, gs.NewGameServerClient(conn)
 }
 
-func getPlayerRegistrar() (*grpc.ClientConn, pr.PlayerRegistrarClient) {
+func getPlayerRegistrar() (*grpc.ClientConn, pr.PlayersRegistrarClient) {
 	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", *playerRegistrarURI, *playerRegistrarPort), grpc.WithInsecure())
 	if err != nil {
 		log.Fatal(err)
 	}
-	return conn, pr.NewPlayerRegistrarClient(conn)
+	return conn, pr.NewPlayersRegistrarClient(conn)
 }
 
 func helpAction(cmdParts []string) {

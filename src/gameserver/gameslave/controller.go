@@ -20,6 +20,7 @@ import (
 
 // Opts contains intialization options and variables for a new GameServerSlave.
 type Opts struct {
+	InstanceID             string
 	GameID                 string
 	PlayerRegistrarAddress string
 	ReturnAddress          string
@@ -51,8 +52,9 @@ var (
 		messages.Game_CHESS: &chess.Implementation{},
 	}
 
-	id   string
-	game GameImplementation
+	instanceID string
+	gameID     string
+	game       GameImplementation
 	// Missing state, history, and game-specific metadata.
 	partialGameProto *messages.Game
 	controller       *Controller
@@ -74,7 +76,8 @@ func NewGameSlaveController(opts Opts) (*Controller, error) {
 	if controller != nil {
 		return nil, fmt.Errorf("GameSlave Controller already initialized")
 	}
-	id = opts.GameID
+	instanceID = opts.InstanceID
+	gameID = opts.GameID
 	slaveTLSConfig = opts.SlaveTLSConfig
 
 	playerRegistrarConn, err := grpc.Dial(opts.PlayerRegistrarAddress, grpc.WithTransportCredentials(credentials.NewTLS(slaveTLSConfig)))
@@ -106,9 +109,7 @@ func NewGameSlaveController(opts Opts) (*Controller, error) {
 		serverSlave: &GameServerSlave{
 			playersRegistrarCli: playerRegistrarCli,
 		},
-		masterCli:           masterCli,
 		masterConn:          masterConn,
-		playerRegistarCli:   playerRegistrarCli,
 		playerRegistrarConn: playerRegistrarConn,
 	}
 	return controller, nil
@@ -126,6 +127,9 @@ func (c *Controller) GameServerSlaveInstance() *GameServerSlave {
 
 // Close all open connections
 func (c *Controller) Close() {
+	if c.playerRegistrarConn != nil {
+		c.playerRegistrarConn.Close()
+	}
 	if c.masterConn != nil {
 		c.masterConn.Close()
 	}

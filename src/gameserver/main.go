@@ -30,6 +30,7 @@ var (
 
 // State
 var (
+	instanceUUID     = uuid.New()
 	slaveController  *gameslave.Controller
 	masterController *gamemaster.Controller
 )
@@ -37,14 +38,19 @@ var (
 func main() {
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
-	log.Printf("Using address %s\n", lis.Addr())
-
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+	log.Printf("Using address %s\n", lis.Addr())
+
+	gameUUID, err := uuid.Parse(*gameID)
+	if err != nil {
+		log.Fatalf("gameID is not a valid UUID: %s", *gameID)
+	}
+
 	var grpcServer *grpc.Server
 	if *slave {
-		slaveTLS, err := gameSlaveTLSConfig(*gameID)
+		slaveTLS, err := gameSlaveTLSConfig(instanceUUID, gameUUID)
 		if err != nil {
 			log.Fatalf("failed to build game slave TLS config: %v", err)
 		}
@@ -62,7 +68,7 @@ func main() {
 		gs.RegisterGameServerServer(grpcServer, slaveController.GameServerInstance())
 		gs.RegisterGameServerSlaveServer(grpcServer, slaveController.GameServerSlaveInstance())
 	} else {
-		masterTLS, err := gameMasterTLSConfig(*gameID)
+		masterTLS, err := gameMasterTLSConfig(instanceUUID, gameUUID)
 		if err != nil {
 			log.Fatalf("failed to build game master TLS config: %v", err)
 		}
