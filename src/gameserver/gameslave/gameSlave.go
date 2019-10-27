@@ -5,8 +5,6 @@ import (
 	"context"
 	"log"
 
-	"github.com/sambdavidson/community-chess/src/proto/messages"
-
 	pb "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 )
@@ -14,7 +12,6 @@ import (
 // GameServerSlave implements the GameServerSlave service.
 type GameServerSlave struct {
 	playersRegistrarCli pr.PlayersRegistrarClient
-
 }
 
 // ChangeAcceptingVotes is called by GameServerMasters to set this GameServerSlave to no longer accept votes. Typically done at end of a voting round.

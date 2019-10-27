@@ -1,10 +1,10 @@
 package gameslave
 
 import (
-	"google.golang.org/grpc/codes"
 	"context"
 	"log"
 
+	"github.com/sambdavidson/community-chess/src/proto/messages"
 	pb "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 )
@@ -18,9 +18,7 @@ type GameServer struct {
 func (s *GameServer) Game(ctx context.Context, in *pb.GameRequest) (*pb.GameResponse, error) {
 	log.Println("GetGame", in)
 	return &pb.GameResponse{
-		Game: &messages.Game{
-
-		}
+		Game: &messages.Game{},
 	}, nil
 }
 

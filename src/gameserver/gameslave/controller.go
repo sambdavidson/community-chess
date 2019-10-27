@@ -2,6 +2,7 @@ package gameslave
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
 
@@ -9,16 +10,22 @@ import (
 
 	chess "github.com/sambdavidson/community-chess/src/gameserver/gameimplementations/chess"
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
+
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 )
 
 // Opts contains intialization options and variables for a new GameServerSlave.
 type Opts struct {
-	PlayerRegistrarCli pr.PlayersRegistrarClient
-	ReturnAddress      string
-	MasterAddress      string
+	GameID                 string
+	PlayerRegistrarAddress string
+	ReturnAddress          string
+	MasterAddress          string
+	ServerTLSConfig        *tls.Config
+	SlaveTLSConfig         *tls.Config
 }
 
 // Controller owns both the GameServer and GameServerSlave and manages their game data.
@@ -28,6 +35,9 @@ type Controller struct {
 
 	masterCli  gs.GameServerMasterClient
 	masterConn *grpc.ClientConn
+
+	playerRegistarCli   pr.PlayersRegistrarClient
+	playerRegistrarConn *grpc.ClientConn
 }
 
 // GameImplementation joins a GameServerServer and GameServerSlaveServer.
@@ -41,18 +51,21 @@ var (
 		messages.Game_CHESS: &chess.Implementation{},
 	}
 
+	id   string
 	game GameImplementation
 	// Missing state, history, and game-specific metadata.
 	partialGameProto *messages.Game
 	controller       *Controller
+	slaveTLSConfig   *tls.Config
 )
 
 // Returns GRPC error if the slave is not yet ready to receieve RPCS.
 // TODO SAM NEXT: Have this be called for every RPC in a clean way.
 func ready() error {
 	if partialGameProto == nil || game == nil {
-		return status.Errof(codes.Unavailable, "not yet available")
+		return status.Errorf(codes.Unavailable, "not yet available")
 	}
+	return nil
 }
 
 // NewGameSlaveController todo
@@ -61,32 +74,43 @@ func NewGameSlaveController(opts Opts) (*Controller, error) {
 	if controller != nil {
 		return nil, fmt.Errorf("GameSlave Controller already initialized")
 	}
+	id = opts.GameID
+	slaveTLSConfig = opts.SlaveTLSConfig
 
-	controller = &Controller{
-		server: &GameServer{
-			playersRegistrarCli: opts.PlayerRegistrarCli,
-		},
-		serverSlave: &GameServerSlave{
-			playersRegistrarCli: opts.PlayerRegistrarCli,
-		},
+	playerRegistrarConn, err := grpc.Dial(opts.PlayerRegistrarAddress, grpc.WithTransportCredentials(credentials.NewTLS(slaveTLSConfig)))
+	if err != nil {
+		log.Fatalf("failed to connect: %v", err)
 	}
+	playerRegistrarCli := pr.NewPlayersRegistrarClient(playerRegistrarConn)
 
-	controller.masterConn, err = grpc.Dial(opts.MasterAddress, grpc.WithInsecure() /* Figure out Auth story */)
+	masterConn, err := grpc.Dial(opts.MasterAddress, grpc.WithTransportCredentials(credentials.NewTLS(slaveTLSConfig)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial master: %v", err)
 	}
-	controller.masterCli = gs.NewGameServerMasterClient(controller.masterConn)
+	masterCli := gs.NewGameServerMasterClient(masterConn)
 
 	log.Printf("Connecting to master and adding self as slave...")
-	res, err := controller.masterCli.AddSlave(context.Background(), &gs.AddSlaveRequest{
+	res, err := masterCli.AddSlave(context.Background(), &gs.AddSlaveRequest{
 		ReturnAddress: opts.ReturnAddress,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to add self as slave to master: %v", err)
 	}
 
-	log.Printf("Success!\n%v", res)
+	log.Printf("Added self as slave to master: %s!\n%v", opts.MasterAddress, res)
 
+	controller = &Controller{
+		server: &GameServer{
+			playersRegistrarCli: playerRegistrarCli,
+		},
+		serverSlave: &GameServerSlave{
+			playersRegistrarCli: playerRegistrarCli,
+		},
+		masterCli:           masterCli,
+		masterConn:          masterConn,
+		playerRegistarCli:   playerRegistrarCli,
+		playerRegistrarConn: playerRegistrarConn,
+	}
 	return controller, nil
 }
 

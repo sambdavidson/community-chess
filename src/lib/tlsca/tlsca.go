@@ -80,12 +80,12 @@ func RekeyCA() ([]byte, error) {
 	newCa := &x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().Unix()),
 		Subject: pkix.Name{
-			Organization:  []string{"Community Chess"},
-			Country:       []string{"US"},
-			Province:      []string{""},
-			Locality:      []string{"Seattle, WA"},
-			StreetAddress: []string{""},
-			PostalCode:    []string{""},
+			Organization:  Organization(),
+			Country:       Country(),
+			Province:      Province(),
+			Locality:      Locality(),
+			StreetAddress: StreetAddress(),
+			PostalCode:    PostalCode(),
 		},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().AddDate(10, 0, 0),

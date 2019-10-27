@@ -9,28 +9,27 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/google/uuid"
+
 	"github.com/sambdavidson/community-chess/src/gameserver/gamemaster"
 	"github.com/sambdavidson/community-chess/src/gameserver/gameslave"
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
-	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // Flags
 var (
 	port = flag.Int("port", 0, "port the GameServer accepts connections")
 
+	slave                  = flag.Bool("slave", false, "whether or not this server is a GameServerSlave")
+	masterAddress          = flag.String("master_address", "", "addres of GameServerMaster; must be set if --slave is also set")
 	playerRegistrarAddress = flag.String("player_registar_address", "localhost:50052", "address of the Player Registrar")
-
-	slave         = flag.Bool("slave", false, "whether or not this server is a GameServerSlave")
-	masterAddress = flag.String("master_address", "", "addres of GameServerMaster; must be set if --slave is also set")
+	gameID                 = flag.String("game_id", uuid.New().String(), "game_id to use, TODO for now is a UUID random generated at startup")
 )
 
 // State
 var (
-	playerRegistrarCli  pr.PlayersRegistrarClient
-	playerRegistrarConn *grpc.ClientConn
-
 	slaveController  *gameslave.Controller
 	masterController *gamemaster.Controller
 )
@@ -38,37 +37,44 @@ var (
 func main() {
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	log.Printf("Using address %s\n", lis.Addr())
+
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	grpcServer := grpc.NewServer()
-
-	playerRegistrarConn, err = grpc.Dial(*playerRegistrarAddress, grpc.WithInsecure() /* Figure out Auth story */)
-	if err != nil {
-		log.Fatalf("failed to connect: %v", err)
-	}
-	playerRegistrarCli = pr.NewPlayersRegistrarClient(playerRegistrarConn)
-
+	var grpcServer *grpc.Server
 	if *slave {
+		slaveTLS, err := gameSlaveTLSConfig(*gameID)
+		if err != nil {
+			log.Fatalf("failed to build game slave TLS config: %v", err)
+		}
 		slaveController, err = gameslave.NewGameSlaveController(gameslave.Opts{
-			PlayerRegistrarCli: playerRegistrarCli,
-			ReturnAddress:      lis.Addr().String(),
-			MasterAddress:      *masterAddress,
+			GameID:                 *gameID,
+			PlayerRegistrarAddress: *playerRegistrarAddress,
+			ReturnAddress:          lis.Addr().String(),
+			MasterAddress:          *masterAddress,
+			SlaveTLSConfig:         slaveTLS,
 		})
 		if err != nil {
-			playerRegistrarConn.Close()
 			log.Fatalf("failed to build GameSlaveController: %v", err)
 		}
+		grpcServer = grpc.NewServer(grpc.Creds(credentials.NewTLS(slaveTLS)))
 		gs.RegisterGameServerServer(grpcServer, slaveController.GameServerInstance())
 		gs.RegisterGameServerSlaveServer(grpcServer, slaveController.GameServerSlaveInstance())
 	} else {
+		masterTLS, err := gameMasterTLSConfig(*gameID)
+		if err != nil {
+			log.Fatalf("failed to build game master TLS config: %v", err)
+		}
 		masterController, err = gamemaster.NewGameMasterController(gamemaster.Opts{
-			PlayerRegistrarCli: playerRegistrarCli,
+			GameID:                 *gameID,
+			PlayerRegistrarAddress: *playerRegistrarAddress,
+			MasterTLSConfig:        masterTLS,
 		})
 		if err != nil {
-			playerRegistrarConn.Close()
 			log.Fatalf("failed to build GameMasterController: %v", err)
 		}
+		grpcServer = grpc.NewServer(grpc.Creds(credentials.NewTLS(masterTLS)))
 		gs.RegisterGameServerServer(grpcServer, masterController.GameServerInstance())
 		gs.RegisterGameServerMasterServer(grpcServer, masterController.GameServerMasterInstance())
 	}
@@ -76,7 +82,6 @@ func main() {
 	go handleSIGINT()
 
 	// START LISTENING
-	log.Printf("Listening at %s\n", lis.Addr())
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
@@ -98,9 +103,6 @@ func handleSIGINT() {
 }
 
 func closeConnections() {
-	if playerRegistrarConn != nil {
-		playerRegistrarConn.Close()
-	}
 	if slaveController != nil {
 		slaveController.Close()
 	}

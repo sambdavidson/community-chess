@@ -1,18 +1,24 @@
 package gamemaster
 
 import (
+	"crypto/tls"
 	"fmt"
+	"log"
 
 	"github.com/sambdavidson/community-chess/src/gameserver/gameimplementations/chess"
 	"github.com/sambdavidson/community-chess/src/proto/messages"
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // Opts contains intialization options and variables for a new GameServerMaster
 type Opts struct {
-	PlayerRegistrarCli pr.PlayersRegistrarClient
+	GameID                 string
+	PlayerRegistrarAddress string
+	ServerTLSConfig        *tls.Config
+	MasterTLSConfig        *tls.Config
 }
 
 // Controller owns both the GameServer and GameServerMaster and manages their game data.
@@ -22,6 +28,9 @@ type Controller struct {
 
 	slaveClis  []gs.GameServerSlaveClient
 	slaveConns []*grpc.ClientConn
+
+	playerRegistarCli   pr.PlayersRegistrarClient
+	playerRegistrarConn *grpc.ClientConn
 }
 
 // GameImplementation joins a GameServerServer and GameServerSlaveServer.
@@ -35,8 +44,10 @@ var (
 		messages.Game_CHESS: &chess.Implementation{},
 	}
 
-	game       GameImplementation
-	controller *Controller
+	id              string
+	game            GameImplementation
+	controller      *Controller
+	masterTLSConfig *tls.Config
 )
 
 // NewGameMasterController todo
@@ -44,14 +55,24 @@ func NewGameMasterController(opts Opts) (*Controller, error) {
 	if controller != nil {
 		return nil, fmt.Errorf("GameMaster Controller already initialized")
 	}
+	id = opts.GameID
+	masterTLSConfig = opts.MasterTLSConfig
+
+	playerRegistrarConn, err := grpc.Dial(opts.PlayerRegistrarAddress, grpc.WithTransportCredentials(credentials.NewTLS(masterTLSConfig)))
+	if err != nil {
+		log.Fatalf("failed to connect: %v", err)
+	}
+	playerRegistrarCli := pr.NewPlayersRegistrarClient(playerRegistrarConn)
 
 	controller = &Controller{
 		gameServer: &GameServer{
-			playersRegistrarCli: opts.PlayerRegistrarCli,
+			playersRegistrarCli: playerRegistrarCli,
 		},
 		gameServerMaster: &GameServerMaster{
-			playersRegistrarCli: opts.PlayerRegistrarCli,
+			playersRegistrarCli: playerRegistrarCli,
 		},
+		playerRegistarCli:   playerRegistrarCli,
+		playerRegistrarConn: playerRegistrarConn,
 	}
 	return controller, nil
 }
