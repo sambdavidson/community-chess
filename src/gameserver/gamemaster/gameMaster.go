@@ -9,11 +9,11 @@ import (
 
 	"github.com/sambdavidson/community-chess/src/proto/messages"
 
+	"github.com/sambdavidson/community-chess/src/lib/auth"
 	"github.com/sambdavidson/community-chess/src/lib/tlsca"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 
 	pb "github.com/sambdavidson/community-chess/src/proto/services/games/server"
@@ -120,26 +120,21 @@ func (s *GameServerMaster) otherSlavesUpdateState(skipSlave string, state *messa
 
 // validateSlave returns its unique InstanceID. If anything goes wrong returns a GRPC status error.
 func validateSlave(ctx context.Context) (string, error) {
-	p, ok := peer.FromContext(ctx)
-	if !ok {
-		return "", status.Error(codes.Unauthenticated, "no peer found")
+	x509Cert, err := auth.X509CertificateFromContext(ctx)
+	if err != nil {
+		return "", status.Errorf(codes.Unauthenticated, err)
 	}
-
-	tlsAuth, ok := p.AuthInfo.(credentials.TLSInfo)
-	if !ok {
-		return "", status.Error(codes.Unauthenticated, "unexpected peer transport credentials")
-	}
-	if !contains(tlsAuth.State.VerifiedChains[0][0].DNSNames, string(tlsca.GameSlave)) {
+	if !contains(x509Cert.DNSNames, string(tlsca.GameSlave)) {
 		return "", status.Error(codes.Unauthenticated, "peer is not a slave")
 	}
-	if !contains(tlsAuth.State.VerifiedChains[0][0].DNSNames, gameID) {
+	if !contains(x509Cert.DNSNames, gameID) {
 		return "", status.Error(codes.Unauthenticated, "peer is not a slave")
 	}
 
-	if len(tlsAuth.State.VerifiedChains[0][0].Subject.CommonName) == 0 {
+	if len(x509Cert.Subject.CommonName) == 0 {
 		return "", status.Error(codes.Unauthenticated, "slave common name empty")
 	}
-	return tlsAuth.State.VerifiedChains[0][0].Subject.CommonName, nil
+	return x509Cert.Subject.CommonName, nil
 }
 
 func contains(s []string, e string) bool {

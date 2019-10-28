@@ -43,4 +43,5 @@ const (
 	GameMaster      SAN = "gamemaster"
 	GameSlave       SAN = "gameslave"
 	PlayerRegistrar SAN = "playerregistrar"
+	Admin           SAN = "admin"
 )

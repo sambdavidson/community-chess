@@ -20,6 +20,7 @@ import (
 	"github.com/sambdavidson/community-chess/src/lib/auth"
 
 	"github.com/sambdavidson/community-chess/src/proto/messages"
+	"github.com/sambdavidson/community-chess/src/proto/messages/games"
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 	"google.golang.org/grpc"
@@ -29,7 +30,10 @@ import (
 /* FLAGS */
 var (
 	gameServerURI  = flag.String("game_server_uri", "localhost", "uri of the game server")
-	gameServerPort = flag.Int("game_server_port", 8080, "port of the game server")
+	gameServerPort = flag.Int("game_server_port", 8081, "port of the game server")
+
+	gameMasterURI  = flag.String("game_master_uri", "localhost", "uri of the game master")
+	gameMasterPort = flag.Int("game_master_port", 8080, "port of the game master")
 
 	playerRegistrarURI  = flag.String("player_registar_uri", "localhost", "URI of the Player Registrar")
 	playerRegistrarPort = flag.Int("player_registrar_port", 50052, "Port of the Player Registrar")
@@ -39,6 +43,8 @@ var (
 var (
 	gsConn       *grpc.ClientConn
 	gsCli        gs.GameServerClient
+	gmConn       *grpc.ClientConn
+	gmCli        gs.GameServerMasterClient
 	prConn       *grpc.ClientConn
 	prCli        pr.PlayersRegistrarClient
 	commands     map[string]command
@@ -52,6 +58,10 @@ func init() {
 	gsConn, gsCli = getGameServer()
 	prConn, prCli = getPlayerRegistrar()
 	commands = map[string]command{
+		"initialize": command{
+			helpText: "initializes the master for a game\n\tE.g. `initialize <game-id>`",
+			action:   initializeAction,
+		},
 		"create_player": command{
 			helpText: "creates a new player with username, updates active player with created player\n\tE.g. 'create_player sam'",
 			action:   createPlayerAction,
@@ -107,6 +117,17 @@ func getGameServer() (*grpc.ClientConn, gs.GameServerClient) {
 	return conn, gs.NewGameServerClient(conn)
 }
 
+func getGameMaster() (*grpc.ClientConn, gs.GameServerMasterClient) {
+	conn, err := grpc.Dial(
+		fmt.Sprintf("%s:%d", *gameMasterURI, *gameMasterPort),
+		grpc.WithTransportCredentials(credentials.NewTLS(certificate.AdminTLSConfig())),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return conn, gs.NewGameServerMasterClient(conn)
+}
+
 func getPlayerRegistrar() (*grpc.ClientConn, pr.PlayersRegistrarClient) {
 	conn, err := grpc.Dial(
 		fmt.Sprintf("%s:%d", *playerRegistrarURI, *playerRegistrarPort),
@@ -135,6 +156,51 @@ func listKnownPlayersAction(cmdParts []string) {
 	for k, p := range knownPlayers {
 		fmt.Printf("%s : %s %d\n", k, p.GetUsername(), p.GetNumberSuffix())
 	}
+}
+
+func initializeAction(cmdParts []string) {
+	if len(cmdParts) != 2 {
+		fmt.Println("badly formatted request")
+		return
+	}
+	id := cmdParts[1]
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	out, err := gmCli.Initialize(ctx, &gs.InitializeRequest{
+		Game: &messages.Game{
+			Id:   id,
+			Type: messages.Game_CHESS,
+			Metadata: &messages.Game_Metadata{
+				Title: "foo",
+				Rules: &messages.Game_Metadata_Rules{
+					GameSpecific: &messages.Game_Metadata_Rules_ChessRules{
+						ChessRules: &games.ChessRules{
+							BalanceEnforcement: &games.ChessRules_TolerateDifference{
+								TolerateDifference: 10,
+							},
+						},
+					},
+				},
+			},
+			State: &messages.Game_State{
+				Game: &messages.Game_State_ChessState{
+					ChessState: &games.ChessState{
+						BoardFen:       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+						RoundIndex:     1,
+						RoundStartTime: time.Now().UnixNano(),
+						RoundEndTime:   time.Now().Add(time.Minute * 10).UnixNano(),
+						Details: &games.ChessState_Details{
+							PlayerIdToTeam: map[string]bool{},
+							PlayerToMove:   map[string]string{},
+						},
+					},
+				},
+			},
+		},
+	})
+	log.Println("ok", out, err)
 }
 
 func createPlayerAction(cmdParts []string) {
@@ -205,7 +271,7 @@ func getGameAction(cmdParts []string) {
 		fmt.Printf("error: %v\n", err)
 		return
 	}
-	fmt.Printf("ok: %v\n", out)
+	log.Println("ok", out, err)
 }
 
 func joinAction(cmdParts []string) {

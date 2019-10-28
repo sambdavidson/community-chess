@@ -19,6 +19,7 @@ import (
 
 var (
 	clientTLSConfig *tls.Config
+	adminTLSConfig  *tls.Config
 )
 
 // ClientTLSConfig returns a singleton of the client TLS certificate.
@@ -27,22 +28,35 @@ func ClientTLSConfig() *tls.Config {
 		return clientTLSConfig
 	}
 	var err error
-	clientTLSConfig, err = buildTLSConfig()
+	clientTLSConfig, err = buildTLSConfig([]string{})
 	if err != nil {
 		log.Fatalf("unable to build client TLS config: %v", err)
 	}
 	return clientTLSConfig
 }
 
-func buildTLSConfig() (*tls.Config, error) {
+// AdminTLSConfig give an admin certificate for talking to the master.
+func AdminTLSConfig() *tls.Config {
+	if adminTLSConfig != nil {
+		return adminTLSConfig
+	}
+	var err error
+	adminTLSConfig, err = buildTLSConfig([]string{tlsca.Admin.String()})
+	if err != nil {
+		log.Fatalf("unable to build admin TLS config: %v", err)
+	}
+	return adminTLSConfig
+}
+
+func buildTLSConfig(extraSANS []string) (*tls.Config, error) {
 	certTmpl := &x509.Certificate{
 		Subject: pkix.Name{
 			CommonName: "debugcli",
 		},
 		SerialNumber: big.NewInt(time.Now().Unix()),
-		DNSNames: []string{
+		DNSNames: append([]string{
 			"localhost", // The address of services will need to be figured out and injected here.
-		},
+		}, extraSANS...),
 		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback, net.IPv6unspecified},
 		NotBefore:   time.Now(),
 		NotAfter:    time.Now().AddDate(10, 0, 0),
