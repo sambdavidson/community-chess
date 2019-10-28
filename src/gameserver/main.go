@@ -41,7 +41,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	log.Printf("Using address %s\n", lis.Addr())
+	_, port, err := net.SplitHostPort(lis.Addr().String())
+	log.Printf("Using port %s\n", port)
 
 	gameUUID, err := uuid.Parse(*gameID)
 	if err != nil {
@@ -57,7 +58,7 @@ func main() {
 		slaveController, err = gameslave.NewGameSlaveController(gameslave.Opts{
 			GameID:                 *gameID,
 			PlayerRegistrarAddress: *playerRegistrarAddress,
-			ReturnAddress:          lis.Addr().String(),
+			ReturnAddress:          "localhost:" + port, // host returns unspecified IPv6 which isn't correct (for now).
 			MasterAddress:          *masterAddress,
 			SlaveTLSConfig:         slaveTLS,
 		})

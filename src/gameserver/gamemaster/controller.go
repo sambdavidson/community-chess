@@ -1,9 +1,13 @@
 package gamemaster
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"log"
+	"time"
+
+	"github.com/sambdavidson/community-chess/src/proto/messages/games"
 
 	"github.com/sambdavidson/community-chess/src/gameserver/gameimplementations/chess"
 	"github.com/sambdavidson/community-chess/src/proto/messages"
@@ -74,6 +78,38 @@ func NewGameMasterController(opts Opts) (*Controller, error) {
 		},
 		playerRegistrarConn: playerRegistrarConn,
 	}
+	_, err = controller.gameServerMaster.Initialize(context.Background(), &gs.InitializeRequest{
+		Game: &messages.Game{
+			Id:   opts.GameID,
+			Type: messages.Game_CHESS,
+			Metadata: &messages.Game_Metadata{
+				Title: "foo",
+				Rules: &messages.Game_Metadata_Rules{
+					GameSpecific: &messages.Game_Metadata_Rules_ChessRules{
+						ChessRules: &games.ChessRules{
+							BalanceEnforcement: &games.ChessRules_TolerateDifference{
+								TolerateDifference: 10,
+							},
+						},
+					},
+				},
+			},
+			State: &messages.Game_State{
+				Game: &messages.Game_State_ChessState{
+					ChessState: &games.ChessState{
+						BoardFen:       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+						RoundIndex:     1,
+						RoundStartTime: time.Now().UnixNano(),
+						RoundEndTime:   time.Now().Add(time.Minute * 10).UnixNano(),
+						Details: &games.ChessState_Details{
+							PlayerIdToTeam: map[string]bool{},
+							PlayerToMove:   map[string]string{},
+						},
+					},
+				},
+			},
+		},
+	})
 	return controller, nil
 }
 

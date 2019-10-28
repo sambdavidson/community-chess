@@ -16,18 +16,20 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sambdavidson/community-chess/src/proto/messages/games"
+	"github.com/sambdavidson/community-chess/src/debugcli/certificate"
+	"github.com/sambdavidson/community-chess/src/lib/auth"
 
 	"github.com/sambdavidson/community-chess/src/proto/messages"
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 /* FLAGS */
 var (
 	gameServerURI  = flag.String("game_server_uri", "localhost", "uri of the game server")
-	gameServerPort = flag.Int("game_server_port", 50051, "port of the game server")
+	gameServerPort = flag.Int("game_server_port", 8080, "port of the game server")
 
 	playerRegistrarURI  = flag.String("player_registar_uri", "localhost", "URI of the Player Registrar")
 	playerRegistrarPort = flag.Int("player_registrar_port", 50052, "Port of the Player Registrar")
@@ -62,17 +64,13 @@ func init() {
 			helpText: "lists all locally known players",
 			action:   listKnownPlayersAction,
 		},
-		"start_game": command{
-			helpText: "starts a game\n\tE.g. 'start_game chess ComeChessItUp'",
-			action:   startGameAction,
-		},
 		"get_game": command{
 			helpText: "gets a game\n\tE.g. 'get_game 123456'",
 			action:   getGameAction,
 		},
-		"add_player": command{
-			helpText: "adds a player to the game, either the active player or a defined one\n\tE.g. 'add_player' or 'add_player 123456 987654'",
-			action:   addPlayerAction,
+		"join": command{
+			helpText: "join the game, either the active player or a defined one\n\tE.g. 'join' or 'join <player_id>'",
+			action:   joinAction,
 		},
 		"remove_player": command{
 			helpText: "removes a player from the game, either the active player or a defined one\n\tE.g. 'remove_player' or 'remove_player 123456 987654'",
@@ -85,10 +83,6 @@ func init() {
 		"stop_game": command{
 			helpText: "stops a game, either the active one or one defined\n\tE.g. 'stop_game' or 'stop_game 987654'",
 			action:   stopGameAction,
-		},
-		"list_games": command{
-			helpText: "list all games by the game server",
-			action:   listGamesAction,
 		},
 		"help": command{
 			helpText: "displays all commands and they help text",
@@ -103,7 +97,10 @@ type command struct {
 }
 
 func getGameServer() (*grpc.ClientConn, gs.GameServerClient) {
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", *gameServerURI, *gameServerPort), grpc.WithInsecure())
+	conn, err := grpc.Dial(
+		fmt.Sprintf("%s:%d", *gameServerURI, *gameServerPort),
+		grpc.WithTransportCredentials(credentials.NewTLS(certificate.ClientTLSConfig())),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -111,7 +108,10 @@ func getGameServer() (*grpc.ClientConn, gs.GameServerClient) {
 }
 
 func getPlayerRegistrar() (*grpc.ClientConn, pr.PlayersRegistrarClient) {
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", *playerRegistrarURI, *playerRegistrarPort), grpc.WithInsecure())
+	conn, err := grpc.Dial(
+		fmt.Sprintf("%s:%d", *playerRegistrarURI, *playerRegistrarPort),
+		grpc.WithTransportCredentials(credentials.NewTLS(certificate.ClientTLSConfig())),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -181,45 +181,6 @@ func getPlayerAction(cmdParts []string) {
 	fmt.Printf("got, updated active player: %v\n", out)
 }
 
-func startGameAction(cmdParts []string) {
-	// start_game <game_type> <title>
-	if len(cmdParts) < 3 {
-		fmt.Println("missing game_type and title")
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	out, err := gsCli.StartGame(ctx, &gs.StartGameRequest{
-		GameType: cmdParts[1],
-		Metadata: &messages.Game_Metadata{
-			Title: cmdParts[2],
-			Rules: &messages.Game_Metadata_Rules{
-				VoteApplication: &messages.Game_Metadata_Rules_VoteAppliedAfterTally_{
-					VoteAppliedAfterTally: &messages.Game_Metadata_Rules_VoteAppliedAfterTally{
-						TimeoutSeconds:  10,
-						WaitFullTimeout: false,
-					},
-				},
-				GameSpecificRules: &messages.Game_Metadata_Rules_ChessRules{
-					ChessRules: &games.ChessRules{
-						BalancedTeams: true,
-						BalanceEnforcement: &games.ChessRules_TolerateDifference{
-							TolerateDifference: 1,
-						},
-					},
-				},
-			},
-		},
-	})
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		return
-	}
-	activeGame = out.GetGame()
-	fmt.Printf("ok: %v\n", out)
-}
-
 func getGameAction(cmdParts []string) {
 	// get_game <game_id>
 	var id string
@@ -235,9 +196,11 @@ func getGameAction(cmdParts []string) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	out, err := gsCli.GetGame(ctx, &gs.GetGameRequest{
-		GameId: id,
-	})
+	pCtx, err := auth.AppendPlayerIDToOutgoingContext(ctx, id)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+	out, err := gsCli.Game(pCtx, &gs.GameRequest{})
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		return
@@ -245,31 +208,26 @@ func getGameAction(cmdParts []string) {
 	fmt.Printf("ok: %v\n", out)
 }
 
-func addPlayerAction(cmdParts []string) {
-	// add_player <player_id> <game_id>
-	var pid, gid string
-	if len(cmdParts) < 3 {
+func joinAction(cmdParts []string) {
+	// add_player <player_id>
+	var pid string
+	if len(cmdParts) < 2 {
 		if activePlayer == nil {
 			fmt.Println("missing player_id, either set an active player or define one.")
 			return
 		}
-		if activeGame == nil {
-			fmt.Println("missing game_id, either set an active player or define one.")
-			return
-		}
 		pid = activePlayer.GetId()
-		gid = activeGame.GetId()
 	} else {
 		pid = cmdParts[1]
-		gid = cmdParts[2]
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	out, err := gsCli.AddPlayer(ctx, &gs.AddPlayerRequest{
-		GameId:   gid,
-		PlayerId: pid,
-	})
+	pCtx, err := auth.AppendPlayerIDToOutgoingContext(ctx, pid)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+	out, err := gsCli.Join(pCtx, &gs.JoinRequest{})
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		return
@@ -279,7 +237,7 @@ func addPlayerAction(cmdParts []string) {
 
 func removePlayerAction(cmdParts []string) {
 	// remove_player <player_id> <game_id>
-	var pid, gid string
+	var pid string
 	if len(cmdParts) < 3 {
 		if activePlayer == nil {
 			fmt.Println("missing player_id, either set an active player or define one.")
@@ -290,18 +248,17 @@ func removePlayerAction(cmdParts []string) {
 			return
 		}
 		pid = activePlayer.GetId()
-		gid = activeGame.GetId()
 	} else {
 		pid = cmdParts[1]
-		gid = cmdParts[2]
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	out, err := gsCli.RemovePlayer(ctx, &gs.RemovePlayerRequest{
-		GameId:   gid,
-		PlayerId: pid,
-	})
+	pCtx, err := auth.AppendPlayerIDToOutgoingContext(ctx, pid)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+	out, err := gsCli.Leave(pCtx, &gs.LeaveRequest{})
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		return
@@ -327,41 +284,29 @@ func postVotesAction(cmdParts []string) {
 	// fmt.Printf("ok: %v\n", out.GetGame())
 }
 
-func listGamesAction(cmdParts []string) {
-	// list_games
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	out, err := gsCli.ListGames(ctx, &gs.ListGamesRequest{})
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		return
-	}
-	fmt.Printf("ok: %v\n", out)
-}
-
 func stopGameAction(cmdParts []string) {
 	// stop_game <player_id>
-	var id string
-	if len(cmdParts) < 2 {
-		if activeGame == nil {
-			fmt.Println("missing game_id, either set an game_id or define one.")
-			return
-		}
-		id = activeGame.GetId()
-	} else {
-		id = cmdParts[1]
-	}
+	// var id string
+	// if len(cmdParts) < 2 {
+	// 	if activeGame == nil {
+	// 		fmt.Println("missing game_id, either set an game_id or define one.")
+	// 		return
+	// 	}
+	// 	id = activeGame.GetId()
+	// } else {
+	// 	id = cmdParts[1]
+	// }
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	out, err := gsCli.StopGame(ctx, &gs.StopGameRequest{
-		GameId: id,
-	})
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		return
-	}
-	fmt.Printf("ok: %v\n", out)
+	// ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	// defer cancel()
+	// out, err := gsCli.StopGame(ctx, &gs.StopGameRequest{
+	// 	GameId: id,
+	// })
+	// if err != nil {
+	// 	fmt.Printf("error: %v\n", err)
+	// 	return
+	// }
+	// fmt.Printf("ok: %v\n", out)
 }
 
 func main() {

@@ -2,6 +2,7 @@ package chess
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/sambdavidson/community-chess/src/proto/messages/games"
@@ -50,7 +51,7 @@ func (i *Implementation) AddPlayers(ctx context.Context, in *pb.AddPlayersReques
 
 	}
 
-	res, err := i.State(ctx, &pb.StateRequest{Detailed: false})
+	res, err := i.State(ctx, &pb.StateRequest{Detailed: true})
 	return &pb.AddPlayersResponse{
 		State: res.State,
 	}, err
@@ -71,7 +72,7 @@ func (i *Implementation) RemovePlayers(ctx context.Context, in *pb.RemovePlayers
 		}
 	}
 
-	res, err := i.State(ctx, &pb.StateRequest{Detailed: false})
+	res, err := i.State(ctx, &pb.StateRequest{Detailed: true})
 	return &pb.RemovePlayersResponse{
 		State: res.State,
 	}, err
@@ -84,6 +85,7 @@ func validateNewTeamSizes(white, black int64, rules *games.ChessRules) error {
 	if rules.GetToleratePercent() > 0 {
 		return validateNewTeamSizesByPercent(white, black, rules.GetToleratePercent())
 	}
+	fmt.Printf("Debug: %v", rules.GetTolerateDifference())
 	return status.Errorf(codes.Internal, "incorrectly setup chess balance enforcement")
 
 }

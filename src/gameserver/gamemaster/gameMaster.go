@@ -56,7 +56,6 @@ func (s *GameServerMaster) AddSlave(ctx context.Context, in *pb.AddSlaveRequest)
 	if ok {
 		return nil, status.Errorf(codes.FailedPrecondition, "slave %s already added to this master", slaveID)
 	}
-
 	slaveConn, err := grpc.Dial(in.GetReturnAddress(), grpc.WithTransportCredentials(credentials.NewTLS(masterTLSConfig)))
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "unable to dial return address")
@@ -68,6 +67,7 @@ func (s *GameServerMaster) AddSlave(ctx context.Context, in *pb.AddSlaveRequest)
 
 // AddPlayers is called by a GameServerSlave to request 1+ player(s) be added to this game.
 func (s *GameServerMaster) AddPlayers(ctx context.Context, in *pb.AddPlayersRequest) (*pb.AddPlayersResponse, error) {
+	log.Println("AddPlayers", in)
 	slaveID, err := validateSlave(ctx)
 	if err != nil {
 		return nil, err

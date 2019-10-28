@@ -11,6 +11,7 @@ import (
 
 // GameServerSlave implements the GameServerSlave service.
 type GameServerSlave struct {
+	masterCli           pb.GameServerMasterClient
 	playersRegistrarCli pr.PlayersRegistrarClient
 }
 

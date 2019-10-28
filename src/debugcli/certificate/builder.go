@@ -1,4 +1,5 @@
-package main
+// Package certificate defines certificate builders for the debug CLI
+package certificate
 
 import (
 	"bytes"
@@ -8,6 +9,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"log"
 	"math/big"
 	"net"
 	"time"
@@ -15,7 +17,24 @@ import (
 	"github.com/sambdavidson/community-chess/src/lib/tlsca"
 )
 
-func clientTLSConfig() (*tls.Config, error) {
+var (
+	clientTLSConfig *tls.Config
+)
+
+// ClientTLSConfig returns a singleton of the client TLS certificate.
+func ClientTLSConfig() *tls.Config {
+	if clientTLSConfig != nil {
+		return clientTLSConfig
+	}
+	var err error
+	clientTLSConfig, err = buildTLSConfig()
+	if err != nil {
+		log.Fatalf("unable to build client TLS config: %v", err)
+	}
+	return clientTLSConfig
+}
+
+func buildTLSConfig() (*tls.Config, error) {
 	certTmpl := &x509.Certificate{
 		Subject: pkix.Name{
 			CommonName: "debugcli",
@@ -24,7 +43,7 @@ func clientTLSConfig() (*tls.Config, error) {
 		DNSNames: []string{
 			"localhost", // The address of services will need to be figured out and injected here.
 		},
-		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback, net.IPv6unspecified},
 		NotBefore:   time.Now(),
 		NotAfter:    time.Now().AddDate(10, 0, 0),
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},

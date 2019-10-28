@@ -104,9 +104,11 @@ func NewGameSlaveController(opts Opts) (*Controller, error) {
 
 	controller = &Controller{
 		server: &GameServer{
+			masterCli:           masterCli,
 			playersRegistrarCli: playerRegistrarCli,
 		},
 		serverSlave: &GameServerSlave{
+			masterCli:           masterCli,
 			playersRegistrarCli: playerRegistrarCli,
 		},
 		masterConn:          masterConn,
