@@ -56,6 +56,7 @@ var (
 func init() {
 	flag.Parse()
 	gsConn, gsCli = getGameServer()
+	gmConn, gmCli = getGameMaster()
 	prConn, prCli = getPlayerRegistrar()
 	commands = map[string]command{
 		"initialize": command{

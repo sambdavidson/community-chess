@@ -52,12 +52,21 @@ func (i *Implementation) resetWithState(s *games.ChessState) {
 	i.roundIndex = s.GetRoundIndex()
 	// TODO figure out if copying inputs is necessary
 	i.playerToTeam = s.GetDetails().GetPlayerIdToTeam()
+	if i.playerToTeam == nil {
+		i.playerToTeam = map[string]bool{}
+	}
 	i.teamToCount = map[bool]int64{
 		true:  s.GetWhiteTeamCount(),
 		false: s.GetBlackTeamCount(),
 	}
 	i.playerToMove = s.GetDetails().GetPlayerToMove()
+	if i.playerToMove == nil {
+		i.playerToMove = map[string]string{}
+	}
 	i.moveToCount = s.GetMoveToCount()
+	if i.moveToCount == nil {
+		i.moveToCount = map[string]int64{}
+	}
 }
 
 // Initialize initializes this server to run the game defined in InitializeRequest.

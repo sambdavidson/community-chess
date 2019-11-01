@@ -48,11 +48,11 @@ func (s *GameServer) History(ctx context.Context, in *pb.HistoryRequest) (*pb.Hi
 
 // Join joins this game.
 func (s *GameServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResponse, error) {
-	log.Println("Join", in)
 	pid, err := auth.PlayerIDFromIncomingContext(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "missing player id from incoming context")
 	}
+	log.Println("Join", pid, in)
 	_, err = s.masterCli.AddPlayers(ctx, &pb.AddPlayersRequest{
 		Players: []*pb.AddPlayersRequest_NewPlayer{
 			&pb.AddPlayersRequest_NewPlayer{

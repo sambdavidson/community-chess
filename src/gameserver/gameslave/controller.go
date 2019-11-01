@@ -23,7 +23,7 @@ type Opts struct {
 	InstanceID             string
 	GameID                 string
 	PlayerRegistrarAddress string
-	ReturnAddress          string
+	SlaveAddress           string
 	MasterAddress          string
 	ServerTLSConfig        *tls.Config
 	SlaveTLSConfig         *tls.Config
@@ -94,7 +94,7 @@ func NewGameSlaveController(opts Opts) (*Controller, error) {
 
 	log.Printf("Connecting to master and adding self as slave...")
 	res, err := masterCli.AddSlave(context.Background(), &gs.AddSlaveRequest{
-		ReturnAddress: opts.ReturnAddress,
+		ReturnAddress: opts.SlaveAddress,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to add self as slave to master: %v", err)

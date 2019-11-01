@@ -44,7 +44,6 @@ func (s *GameServerMaster) Initialize(ctx context.Context, in *pb.InitializeRequ
 
 // AddSlave is called by a GameServerSlave to request to be accepted as a valid slave for this game.
 func (s *GameServerMaster) AddSlave(ctx context.Context, in *pb.AddSlaveRequest) (*pb.AddSlaveResponse, error) {
-	log.Println("AddSlave", in)
 	slaveID, err := validateSlave(ctx)
 	if err != nil {
 		return nil, err
@@ -62,6 +61,7 @@ func (s *GameServerMaster) AddSlave(ctx context.Context, in *pb.AddSlaveRequest)
 	}
 	s.slaves[slaveID] = pb.NewGameServerSlaveClient(slaveConn)
 	controller.slaveConns = append(controller.slaveConns, slaveConn)
+	log.Println("Added Slave", slaveID, in)
 	return &pb.AddSlaveResponse{}, nil
 }
 
@@ -122,7 +122,7 @@ func (s *GameServerMaster) otherSlavesUpdateState(skipSlave string, state *messa
 func validateSlave(ctx context.Context) (string, error) {
 	x509Cert, err := auth.X509CertificateFromContext(ctx)
 	if err != nil {
-		return "", status.Errorf(codes.Unauthenticated, err)
+		return "", status.Errorf(codes.Unauthenticated, "could not get x509 from context: %v", err)
 	}
 	if !contains(x509Cert.DNSNames, string(tlsca.GameSlave)) {
 		return "", status.Error(codes.Unauthenticated, "peer is not a slave")

@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/sambdavidson/community-chess/src/gameserver/gameimplementations/chess"
-	"github.com/sambdavidson/community-chess/src/lib/auth"
 	"github.com/sambdavidson/community-chess/src/proto/messages"
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
@@ -62,7 +61,6 @@ func NewGameMasterController(opts Opts) (*Controller, error) {
 
 	playerRegistrarConn, err := grpc.Dial(opts.PlayerRegistrarAddress,
 		grpc.WithTransportCredentials(credentials.NewTLS(masterTLSConfig)),
-		grpc.WithUnaryInterceptor(auth.AdminAuthorizerInterceptor),
 	)
 	if err != nil {
 		log.Fatalf("failed to connect: %v", err)

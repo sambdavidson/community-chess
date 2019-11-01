@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sambdavidson/community-chess/src/lib/tlsca"
 
@@ -12,21 +13,22 @@ import (
 )
 
 // AdminAuthorizerClientInterceptor is an authorizor and ensure the request uses Admin auth.
-func AdminAuthorizerClientInterceptor() grpc.DialOption {
-	return grpc.WithUnaryInterceptor(adminAuthorizerClientInterceptorImplementation)
-}
-
-func adminAuthorizerClientInterceptorImplementation(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...CallOption) error {
+func AdminAuthorizerClientInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	
+	fmt.Println("adminInterceptor", info.FullMethod)
+	if info.FullMethod != "f" {
+		return handler(ctx, req)
+	}
 	x509Cert, err := X509CertificateFromContext(ctx)
 	if err != nil {
-		return status.Errorf(codes.PermissionDenied, "AdminAuthorizerInterceptor %v", err)
+		return nil, status.Errorf(codes.PermissionDenied, "AdminAuthorizerInterceptor %v", err)
 	}
 
 	for _, san := range x509Cert.DNSNames {
 		if san == tlsca.Admin.String() {
-			return nil
+			return handler(ctx, req)
 		}
 	}
 
-	return status.Errorf(codes.PermissionDenied, "missing admin certificate")
+	return nil, status.Errorf(codes.PermissionDenied, "missing admin certificate")
 }
