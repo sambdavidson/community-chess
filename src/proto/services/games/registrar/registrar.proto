@@ -1,0 +1,42 @@
+/* BUILD
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\games\registrar\registrar.proto
+*/
+
+syntax = "proto3";
+
+import "github.com/sambdavidson/community-chess/src/proto/messages/game.proto";
+
+package registrar;
+
+service GameRegistrar {
+    rpc NewGame (NewGameRequest) returns (NewGameResponse);
+    rpc ListGames (ListGamesRequest) returns (ListGamesResponse);
+    rpc SearchGames (SearchGamesRequest) returns (SearchGamesResponse);
+}
+
+message NewGameRequest {
+    messages.Game.Type game_type = 1;
+    messages.Game.Metadata metadata = 2;
+}
+
+message NewGameResponse {
+    messages.Game game = 1;
+}
+
+message ListGamesRequest {
+    int32 results_per_page = 1;
+    int32 page = 2;
+}
+
+message ListGamesResponse {
+    repeated messages.Game games = 1;
+}
+
+message SearchGamesRequest {
+    string name = 1;
+    // TODO: figure out search parameters
+}
+
+message SearchGamesResponse {
+    repeated messages.Game games = 1;
+}

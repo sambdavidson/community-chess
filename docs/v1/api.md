@@ -13,16 +13,16 @@ For example: `GET www.communitychess.com/api/v1/games`
 | Method | Endpoint                | Description                                           | Service                           | Request Body            | Return Body                        |
 | ------ | ----------------------- | ----------------------------------------------------- | --------------------------------- | ----------------------- | ---------------------------------- |
 | *      | /login                  | (TODO) Some sort of identity flow for obtaining EUCs. | TODO                              | TODO                    | TODO                               |
-| GET    | /players/${PlayerId}    | Get details of player ${PlayerId}                     | [Players Server](#Players-Server) |                         | [PlayerExtended](#Player-Extended) |
+| GET    | /players/${PlayerId}    | Get details of player ${PlayerId}                     | [Players Server](#Players-Server) |                         | [Player](#Player) |
 | GET    | /games                  | Collection of publicly available games.               | [MC Server](#mc-server)           |                         | [GamesCollection](#GameCollection) |
 | POST   | /games                  | Create a new game.                                    | [MC Server](#mc-server)           | [IGame](#IGame)         | [IGameMetadata](#IGameMetadata)    |
-| GET    | /game/${GameId}         | Description of game ${GameId}.                        | [Game Server](#game-server)       |                         | [IGameMetadata](#IGameMetadata)    |
-| POST   | /game/${GameId}/players | Join (add player) at the game ${GameId}.              | [Game Server](#game-server)       | [Player](#Player)       |                                    |
-| POST   | /game/${GameId}/vote    | Cast a vote to the game ${GameId}.                    | [Game Server](#game-server)       | [IGameVote](#IGameVote) |                                    |
+| GET    | /games/${GameId}         | Description of game ${GameId}.                        | [Game Server](#game-server)       |                         | [IGameMetadata](#IGameMetadata)    |
+| POST   | /games/${GameId}/players | Join (add player) at the game ${GameId}.              | [Game Server](#game-server)       | [Player](#Player)       |                                    |
+| POST   | /games/${GameId}/vote    | Cast a vote to the game ${GameId}.                    | [Game Server](#game-server)       | [IGameVote](#IGameVote) |                                    |
 
-## Generic Structures
+## Base Structures
 
-### Generic Aliases
+### Base Aliases
 ```Typescript
 // Unique identifier for a player. Global and one PlayerId per account.
 type PlayerId = string;
@@ -33,18 +33,18 @@ type ChatId = string;
 ```
 
 ### Player
-Referenced Types: [PlayerId](#Generic-Aliases)
+Referenced Types: [PlayerId](#Base-Aliases), [GameId](#Base-Aliases)
 ```Typescript
-class Player {
+type Player = PlayerLite | PlayerFull
+class PlayerLite {
+    pType: 'playerSimple';
     playerId: PlayerId;
     nickname: string;
 }
-```
-
-### PlayerExtended
-Refrenced Types: [Player](#Player), [GameId](#Generic-Aliases)
-```Typescript
-class PlayerExtended extends Player {
+class PlayerFull {
+    pType: 'playerFull';
+    playerId: PlayerId;
+    nickname: string;
     email: string;
     username: string;
     games: GameId[];
@@ -53,18 +53,18 @@ class PlayerExtended extends Player {
 ```
 
 ### GamesCollection
-Referenced Types: [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [Game](#Game)
+Referenced Types: [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [IGame](#IGame)
 ```Typescript
 class GamesCollection {
     time: Date;
-    games: Game[];
+    games: IGame[];
 }
 ```
 
 ### IGame
 Implementations: [Chess](#chess)
 
-Referenced Types: [GameId](#Generic-Aliases), [ChatId](#Generic-Aliases), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [IGameMetadata](#IGameMetadata), [IGameState](#IGameState), [Player](#Player)
+Referenced Types: [GameId](#Base-Aliases), [ChatId](#Base-Aliases), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [IGameMetadata](#IGameMetadata), [IGameState](#IGameState), [Player](#Player)
 ```Typescript
 interface IGame {
     gameName: string;
@@ -160,7 +160,7 @@ type PGN = string; // Portable Game Notation
 ```
 
 ### Chess
-Referenced Types: [IGame](#IGame), [GameId](#Generic-Aliases), [ChatId](#Generic-Aliases), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [ChessMetadata](#ChessMetadata), [ChessState](#ChessState), [Player](#Player)
+Referenced Types: [IGame](#IGame), [GameId](#Base-Aliases), [ChatId](#Base-Aliases), [Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date), [ChessMetadata](#ChessMetadata), [ChessState](#ChessState), [Player](#Player)
 ```Typescript
 class Chess implements IGame {
     gameName: string = "chess";
@@ -210,12 +210,12 @@ Referenced Types: [FEN](#Chess-Aliases), [ChessVote](#ChessVote)
 ```Typescript
 class ChessRound {
     board: FEN;
-    votes: {[player: playerId]: ChessVote;};
+    votes: {[playerId: string]: ChessVote;};
 }
 ```
 
 ### ChessVote
-Referenced Types: [IGameVote](#IGameVote), [PGN](#Chess-Aliases), [PlayerId](#Generic-Aliases)
+Referenced Types: [IGameVote](#IGameVote), [PGN](#Chess-Aliases), [PlayerId](#Base-Aliases)
 ```Typescript
 class ChessVote implements IGameVote {
     gameName: string = "chess";
@@ -234,4 +234,5 @@ The Master of Ceremonies Server (MC Server) is responsible for enumerating avail
 
 ### Game Server
 The Game Server run the actual game. 
+
 

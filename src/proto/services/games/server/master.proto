@@ -1,0 +1,72 @@
+/* BUILD
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\games\server\master.proto
+*/
+syntax = "proto3";
+
+import "github.com/sambdavidson/community-chess/src/proto/messages/game.proto";
+
+package server;
+
+// GameServerMaster is an internal only service for coordinating a single game.
+// These RPCs can be generally trusted.
+// Votes are requested by masters from slaves periodically. 
+service GameServerMaster {
+    // Initialize initializes the game server with a game and configuration.
+    rpc Initialize (InitializeRequest) returns (InitializeResponse);
+
+    // AddSlave adds a new slave that will serve this receiving master.
+    rpc AddSlave (AddSlaveRequest) returns (AddSlaveResponse);
+
+    // AddPlayers is called by a slave and adds 1+ players to the game.
+    rpc AddPlayers (AddPlayersRequest) returns (AddPlayersResponse);
+
+    // RemovePlayers is called by a slave and removes 1+ players from the game.
+    rpc RemovePlayers (RemovePlayersRequest) returns (RemovePlayersResponse);
+
+    // StopGame is called by a slave or other (TODO) authority to kill a game.
+    rpc StopGame (StopGameRequest) returns (StopGameResponse);
+}
+
+message InitializeRequest {
+    messages.Game game = 1;
+}
+
+message InitializeResponse {}
+
+message AddSlaveRequest {
+    // This will probably work differently in a networked cloud / when infra is figured out. 
+    string return_address = 1;
+}
+
+message AddSlaveResponse {
+    messages.Game game = 1;
+}
+
+message AddPlayersRequest {
+    repeated NewPlayer players = 1;
+    
+    message NewPlayer {
+        string player_id = 1;
+        JoinRequest request = 2;
+
+        message JoinRequest {
+            messages.Game.NewPlayerFields fields = 1;
+        }
+    }
+}
+
+message AddPlayersResponse {
+    messages.Game.State state = 1;
+}
+
+message RemovePlayersRequest {
+    repeated string player_ids = 1;
+}
+
+message RemovePlayersResponse{
+    messages.Game.State state = 1;
+}
+
+message StopGameRequest {}
+
+message StopGameResponse {}

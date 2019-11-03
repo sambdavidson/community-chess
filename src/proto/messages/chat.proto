@@ -1,0 +1,12 @@
+/* BUILD
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\messages\chat.proto
+*/
+
+syntax = "proto3";
+
+package messages;
+
+// Unique identifier for a chat conversation thread.
+message ChatId {
+    string id = 1;
+}

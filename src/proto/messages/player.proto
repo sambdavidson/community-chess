@@ -1,0 +1,28 @@
+/* BUILD
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\messages\player.proto
+*/
+
+syntax = "proto3";
+
+package messages;
+
+// A player is corresponds to a single human playing the game.
+message Player {
+    // Unique identifier for a player. Global and one PlayerId per account. UUIDv4
+    string id = 1;
+    
+    // Username and number suffix can be combined to uniquely identify a player
+    // For instance multiple people registering for the username "sam" will be
+    // assigned unique number suffixes such as 0003 and 0819 such that
+    // sam#0003 and sam#0819. Player number suffixes are positive integers 
+    // capped at 9999 for UI and adding friends simplicity. So gotta be one of
+    // the first thousand people to pick a name.
+    string username = 3;
+    int32 number_suffix = 4;
+
+    //  The number of nanoseconds between the creation of this player and January 1, 1970 UTC.
+    int64 creation_time = 5;
+
+    // TODO: Figure out Authz stuff
+    // email, link to unique social media account.
+}

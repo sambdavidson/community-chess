@@ -1,0 +1,85 @@
+/* BUILD
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\games\server\server.proto
+*/
+
+syntax = "proto3";
+
+import "github.com/sambdavidson/community-chess/src/proto/messages/game.proto";
+import "github.com/sambdavidson/community-chess/src/proto/messages/vote.proto";
+
+package server;
+
+service GameServer {
+    rpc Game (GameRequest) returns (GameResponse);
+    rpc Metadata (MetadataRequest) returns (MetadataResponse);
+    rpc State (StateRequest) returns (StateResponse);
+    rpc History (HistoryRequest) returns (HistoryResponse);
+    rpc Join (JoinRequest) returns (JoinResponse);
+    rpc Leave (LeaveRequest) returns (LeaveResponse);
+    rpc PostVote (PostVoteRequest) returns (PostVoteResponse);
+    rpc Status (StatusRequest) returns (StatusResponse);
+}
+
+message GameRequest {
+    // Whether to include comprehensive data-intensive lists of players and
+    // the like. This is meant to allow for lightweight frequent RPCs but
+    // detailed data-ful RPCs when needed by either clients or internal services.
+    bool detailed = 1;
+}
+
+message GameResponse {
+    messages.Game game = 1;
+}
+
+message MetadataRequest {}
+
+message MetadataResponse {
+    // The metadata of the game.
+    messages.Game.Metadata metadata = 1;
+}
+
+message StateRequest {
+    // Whether to include comprehensive data-intensive lists of players and
+    // the like. This is meant to allow for lightweight frequent RPCs but
+    // detailed data-ful RPCs when needed by either clients or internal services.
+    bool detailed = 1;
+}
+
+message StateResponse {
+    messages.Game.State state = 1;
+}
+
+message HistoryRequest {
+    // Whether to include comprehensive data-intensive lists of players and
+    // the like. This is meant to allow for lightweight frequent RPCs but
+    // detailed data-ful RPCs when needed by either clients or internal services.
+    bool detailed = 1;
+}
+
+message HistoryResponse {
+    messages.Game.History history = 1;
+}
+
+message JoinRequest {
+    messages.Game.NewPlayerFields fields = 1;
+}
+
+message JoinResponse {}
+
+message LeaveRequest {}
+
+message LeaveResponse {}
+
+message PostVoteRequest {
+    messages.Vote vote = 1;
+}
+
+message PostVoteResponse {}
+
+message StatusRequest {
+
+}
+
+message StatusResponse {
+    
+}

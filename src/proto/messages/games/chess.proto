@@ -1,0 +1,74 @@
+/* BUILD
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\messages\games\chess.proto
+*/
+syntax = "proto3";
+
+package games;
+
+message ChessRules {
+    bool balanced_teams = 1;
+    // balanceEnforcement defines how balancing will work if balanced_teams is true.
+    // tolerate_difference defines the exact number of max difference between team counts.
+    //   e.g. if tolerate_difference is equal to 3: (team2.size - 3) <= team1.size <= (team2.size + 3) 
+    // tolerate_percent defines the exact percentage from 0.0+ of difference between team counts.
+    //   e.g. if tolerate_percent is equal to 0.3: math.Floor(team2.size * (1.0 - 0.3)) <= team1.size <= math.Ceil(team2.size * (1.0 + 0.3))
+    //           Small numbers example team2.size is 5: 3 <= team1.size <= 7
+    //           Large numbers example team2.size is 1234: 863 <= team1.size <= 1605
+    // When either black or white team are increased:
+    //   these constraints are checked where both black and white must be within the the other team's bounds.
+    // When either black or white are decreased... TODO autobalance?
+    oneof balanceEnforcement {
+        // Must be at least 1
+        int64 tolerate_difference = 2;
+        // Must be at >0
+        float tolerate_percent = 3;
+    }
+
+    // Are players allowed to switch between teams.
+    bool team_switching = 4;
+}
+
+message ChessState {
+
+    int64 white_team_count = 1;
+    int64 black_team_count = 2;
+
+    // Board in the form of Forsyth-Edwards notation
+    string board_fen = 4;
+
+    // Move string in form of Algebraic Notation
+    map<string, int64> move_to_count = 5;
+
+    // Start time of the round in Nanos since EPOCH.
+    int64 round_start_time = 6;
+    // End time of the round in Nanos since EPOCH.
+    int64 round_end_time = 7;
+
+    // Details are much more information dense than necessary for regular client function.
+    // Well be empty unless details are requested by callee.
+    // Typically will only be used by internal APIs.
+    Details details = 8;
+
+    int32 round_index = 9;
+
+    message Details {
+        // White team is true, Black team is false
+        map<string, bool> player_id_to_team = 1;
+        // Move string in form of Algebraic Notation
+        map<string, string> player_to_move = 2;
+    }
+}
+
+message ChessHistory {
+    repeated ChessState state_history = 1;
+}
+
+message ChessVote {
+    int32 round_index = 1;
+    // Move string in form of Algebraic Notation
+    string move = 2;
+}
+
+message ChessNewPlayerFields {
+    bool white_team = 1;
+}

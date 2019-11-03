@@ -1,0 +1,34 @@
+/* BUILD
+protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugins=grpc:src/proto .\src\proto\services\players\registrar\registrar.proto
+*/
+
+syntax = "proto3";
+
+import "github.com/sambdavidson/community-chess/src/proto/messages/player.proto";
+
+package registrar;
+
+service PlayersRegistrar {
+    rpc RegisterPlayer (RegisterPlayerRequest) returns (RegisterPlayerResponse);
+    rpc GetPlayer (GetPlayerRequest) returns (GetPlayerReponse);
+}
+
+message RegisterPlayerRequest {
+    string username = 1;
+
+    
+    // TODO: oauth stuff
+    // email, link to social media and stuff
+}
+
+message RegisterPlayerResponse {
+    messages.Player player = 1;
+}
+
+message GetPlayerRequest {
+    string player_id = 1;
+}
+
+message GetPlayerReponse {
+    messages.Player player = 1;
+}
