@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
+	"github.com/sambdavidson/community-chess/src/gameserver/game"
 	"github.com/sambdavidson/community-chess/src/proto/messages"
 
 	"github.com/sambdavidson/community-chess/src/lib/auth"
@@ -30,16 +32,17 @@ type GameServerMaster struct {
 
 // Initialize initializes this server to run the game defined in InitializeRequest.
 func (s *GameServerMaster) Initialize(ctx context.Context, in *pb.InitializeRequest) (*pb.InitializeResponse, error) {
-	log.Println("Initialize", in)
-	if game == nil {
+	if gameImplementation == game.Noop {
 		var ok bool
-		if game, ok = gameImplementations[in.GetGame().GetType()]; !ok {
+		if gameImplementation, ok = game.ImplementationMap[in.GetGame().GetType()]; !ok {
 			return nil, status.Errorf(codes.InvalidArgument, "unknown game type: %v", in.GetGame().GetType())
 		}
+		gameType = in.GetGame().GetType()
 	} else {
 		return nil, status.Error(codes.FailedPrecondition, "this master is already initialized")
 	}
-	return game.Initialize(ctx, in)
+	initializeTime = time.Now()
+	return gameImplementation.Initialize(ctx, in)
 }
 
 // AddSlave is called by a GameServerSlave to request to be accepted as a valid slave for this game.
@@ -47,6 +50,9 @@ func (s *GameServerMaster) AddSlave(ctx context.Context, in *pb.AddSlaveRequest)
 	slaveID, err := validateSlave(ctx)
 	if err != nil {
 		return nil, err
+	}  
+	if gameImplementation == game.Noop {
+		return nil, status.Errorf(codes.FailedPrecondition, "master has not yet been initialized")
 	}
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -61,8 +67,15 @@ func (s *GameServerMaster) AddSlave(ctx context.Context, in *pb.AddSlaveRequest)
 	}
 	s.slaves[slaveID] = pb.NewGameServerSlaveClient(slaveConn)
 	controller.slaveConns = append(controller.slaveConns, slaveConn)
-	log.Println("Added Slave", slaveID, in)
-	return &pb.AddSlaveResponse{}, nil
+
+	res, err := controller.GameServerInstance().Game(ctx, &pb.GameRequest{Detailed: true})
+	if err != nil {
+		return nil, err
+	}
+	return &pb.AddSlaveResponse{
+		MasterId: instanceID,
+		Game:     res.GetGame(),
+	}, nil
 }
 
 // AddPlayers is called by a GameServerSlave to request 1+ player(s) be added to this game.
@@ -72,7 +85,7 @@ func (s *GameServerMaster) AddPlayers(ctx context.Context, in *pb.AddPlayersRequ
 	if err != nil {
 		return nil, err
 	}
-	res, err := game.AddPlayers(ctx, in)
+	res, err := gameImplementation.AddPlayers(ctx, in)
 	if err == nil {
 		s.otherSlavesUpdateState(slaveID, res.GetState())
 	}
@@ -86,7 +99,7 @@ func (s *GameServerMaster) RemovePlayers(ctx context.Context, in *pb.RemovePlaye
 	if err != nil {
 		return nil, err
 	}
-	res, err := game.RemovePlayers(ctx, in)
+	res, err := gameImplementation.RemovePlayers(ctx, in)
 	if err == nil {
 		s.otherSlavesUpdateState(slaveID, res.GetState())
 	}

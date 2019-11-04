@@ -67,6 +67,9 @@ func (i *Implementation) resetWithState(s *games.ChessState) {
 	if i.moveToCount == nil {
 		i.moveToCount = map[string]int64{}
 	}
+	i.history = &games.ChessHistory{
+		StateHistory: []*games.ChessState{},
+	}
 }
 
 // Initialize initializes this server to run the game defined in InitializeRequest.
@@ -79,8 +82,12 @@ func (i *Implementation) Initialize(ctx context.Context, in *pb.InitializeReques
 	}
 
 	i.resetWithState(in.GetGame().GetState().GetChessState())
-	i.metadata = in.GetGame().GetMetadata()
-	i.history = in.GetGame().GetHistory().GetChessHistory()
+	if m := in.GetGame().GetMetadata(); m != nil {
+		i.metadata = m
+	}
+	if h := in.GetGame().GetHistory().GetChessHistory(); h != nil {
+		i.history = h
+	}
 	i.initialized = true
 	return &pb.InitializeResponse{}, nil
 }

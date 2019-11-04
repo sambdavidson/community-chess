@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/sambdavidson/community-chess/src/gameserver/game"
 	"github.com/sambdavidson/community-chess/src/proto/messages"
 
-	chess "github.com/sambdavidson/community-chess/src/gameserver/gameimplementations/chess"
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
@@ -41,34 +41,15 @@ type Controller struct {
 	playerRegistrarConn *grpc.ClientConn
 }
 
-// GameImplementation joins a GameServerServer and GameServerSlaveServer.
-type GameImplementation interface {
-	gs.GameServerServer
-	gs.GameServerSlaveServer
-}
-
 var (
-	gameImplementations = map[messages.Game_Type]GameImplementation{
-		messages.Game_CHESS: &chess.Implementation{},
-	}
-
-	instanceID string
-	gameID     string
-	game       GameImplementation
+	instanceID         string
+	gameID             string
+	gameImplementation = game.Noop
 	// Missing state, history, and game-specific metadata.
 	partialGameProto *messages.Game
 	controller       *Controller
 	slaveTLSConfig   *tls.Config
 )
-
-// Returns GRPC error if the slave is not yet ready to receieve RPCS.
-// TODO SAM NEXT: Have this be called for every RPC in a clean way.
-func ready() error {
-	if partialGameProto == nil || game == nil {
-		return status.Errorf(codes.Unavailable, "not yet available")
-	}
-	return nil
-}
 
 // NewGameSlaveController builts a new slave and registers itself to the master.
 func NewGameSlaveController(opts Opts) (*Controller, error) {
@@ -101,7 +82,6 @@ func NewGameSlaveController(opts Opts) (*Controller, error) {
 	}
 
 	log.Printf("Added self as slave to master: %s!\n%v", opts.MasterAddress, res)
-
 	controller = &Controller{
 		server: &GameServer{
 			masterCli:           masterCli,
@@ -114,6 +94,16 @@ func NewGameSlaveController(opts Opts) (*Controller, error) {
 		},
 		masterConn:          masterConn,
 		playerRegistrarConn: playerRegistrarConn,
+	}
+
+	var ok bool
+	if gameImplementation, ok = game.ImplementationMap[res.GetGame().GetType()]; !ok {
+		return nil, status.Errorf(codes.InvalidArgument, "unknown game type: %v", res.GetGame().GetType())
+	}
+	if _, err = gameImplementation.Initialize(context.Background(), &gs.InitializeRequest{
+		Game: res.GetGame(),
+	}); err != nil {
+		return nil, fmt.Errorf("unable to initialize game implementation: %v", err)
 	}
 	return controller, nil
 }

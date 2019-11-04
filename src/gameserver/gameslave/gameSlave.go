@@ -34,5 +34,5 @@ func (s *GameServerSlave) UpdateMetadata(ctx context.Context, in *pb.UpdateMetad
 
 // UpdateState is called by GameServerMasters to update this slave's state of the game.
 func (s *GameServerSlave) UpdateState(ctx context.Context, in *pb.UpdateStateRequest) (*pb.UpdateStateResponse, error) {
-	return game.UpdateState(ctx, in)
+	return gameImplementation.UpdateState(ctx, in)
 }

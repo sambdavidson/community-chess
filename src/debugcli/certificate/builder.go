@@ -18,8 +18,8 @@ import (
 )
 
 var (
-	clientTLSConfig *tls.Config
-	adminTLSConfig  *tls.Config
+	clientTLSConfig   *tls.Config
+	internalTLSConfig *tls.Config
 )
 
 // ClientTLSConfig returns a singleton of the client TLS certificate.
@@ -35,17 +35,17 @@ func ClientTLSConfig() *tls.Config {
 	return clientTLSConfig
 }
 
-// AdminTLSConfig give an admin certificate for talking to the master.
-func AdminTLSConfig() *tls.Config {
-	if adminTLSConfig != nil {
-		return adminTLSConfig
+// InternalTLSConfig give an admin certificate for talking to the master.
+func InternalTLSConfig() *tls.Config {
+	if internalTLSConfig != nil {
+		return internalTLSConfig
 	}
 	var err error
-	adminTLSConfig, err = buildTLSConfig([]string{tlsca.Admin.String()})
+	internalTLSConfig, err = buildTLSConfig([]string{tlsca.Internal.String()})
 	if err != nil {
 		log.Fatalf("unable to build admin TLS config: %v", err)
 	}
-	return adminTLSConfig
+	return internalTLSConfig
 }
 
 func buildTLSConfig(extraSANS []string) (*tls.Config, error) {

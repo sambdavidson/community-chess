@@ -18,7 +18,7 @@ func MasterAuthUnaryServerInterceptor(ctx context.Context, req interface{}, info
 	}
 
 	for _, san := range x509Cert.DNSNames {
-		if san == tlsca.Admin.String() {
+		if san == tlsca.Internal.String() {
 			return handler(ctx, req)
 		}
 	}

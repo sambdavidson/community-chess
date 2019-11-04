@@ -4,9 +4,11 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"time"
 
-	"github.com/sambdavidson/community-chess/src/gameserver/gameimplementations/chess"
 	"github.com/sambdavidson/community-chess/src/proto/messages"
+
+	"github.com/sambdavidson/community-chess/src/gameserver/game"
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 	"google.golang.org/grpc"
@@ -32,22 +34,14 @@ type Controller struct {
 	playerRegistrarConn *grpc.ClientConn
 }
 
-// GameImplementation joins a GameServerServer and GameServerSlaveServer.
-type GameImplementation interface {
-	gs.GameServerServer
-	gs.GameServerMasterServer
-}
-
 var (
-	gameImplementations = map[messages.Game_Type]GameImplementation{
-		messages.Game_CHESS: &chess.Implementation{},
-	}
-
-	instanceID      string
-	gameID          string
-	game            GameImplementation
-	controller      *Controller
-	masterTLSConfig *tls.Config
+	instanceID         string
+	gameID             string
+	gameType           messages.Game_Type
+	gameImplementation = game.Noop
+	initializeTime     time.Time
+	controller         *Controller
+	masterTLSConfig    *tls.Config
 )
 
 // NewGameMasterController todo

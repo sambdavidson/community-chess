@@ -2,7 +2,6 @@ package gameslave
 
 import (
 	"context"
-	"log"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -22,7 +21,6 @@ type GameServer struct {
 
 // Game gets this game.
 func (s *GameServer) Game(ctx context.Context, in *pb.GameRequest) (*pb.GameResponse, error) {
-	log.Println("GetGame", in)
 	return &pb.GameResponse{
 		Game: &messages.Game{},
 	}, nil
@@ -30,19 +28,16 @@ func (s *GameServer) Game(ctx context.Context, in *pb.GameRequest) (*pb.GameResp
 
 // Metadata gets this game's metadata.
 func (s *GameServer) Metadata(ctx context.Context, in *pb.MetadataRequest) (*pb.MetadataResponse, error) {
-	log.Println("GetGameMetadata", in)
 	return &pb.MetadataResponse{}, nil
 }
 
 // State gets this game's state.
 func (s *GameServer) State(ctx context.Context, in *pb.StateRequest) (*pb.StateResponse, error) {
-	log.Println("GetGameState", in)
 	return &pb.StateResponse{}, nil
 }
 
 // History gets this game's history.
 func (s *GameServer) History(ctx context.Context, in *pb.HistoryRequest) (*pb.HistoryResponse, error) {
-	log.Println("GetGameHistory", in)
 	return &pb.HistoryResponse{}, nil
 }
 
@@ -52,7 +47,6 @@ func (s *GameServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResp
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "missing player id from incoming context")
 	}
-	log.Println("Join", pid, in)
 	_, err = s.masterCli.AddPlayers(ctx, &pb.AddPlayersRequest{
 		Players: []*pb.AddPlayersRequest_NewPlayer{
 			&pb.AddPlayersRequest_NewPlayer{
@@ -72,18 +66,15 @@ func (s *GameServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResp
 
 // Leave leaves this game.
 func (s *GameServer) Leave(ctx context.Context, in *pb.LeaveRequest) (*pb.LeaveResponse, error) {
-	log.Println("Leave", in)
 	return &pb.LeaveResponse{}, nil
 }
 
 // PostVote posts a vote to this game.
 func (s *GameServer) PostVote(ctx context.Context, in *pb.PostVoteRequest) (*pb.PostVoteResponse, error) {
-	log.Println("PostVote", in)
 	return &pb.PostVoteResponse{}, nil
 }
 
 // Status returns the status of this game (and/or the underlying server).
 func (s *GameServer) Status(ctx context.Context, in *pb.StatusRequest) (*pb.StatusResponse, error) {
-	log.Println("Status", in)
 	return &pb.StatusResponse{}, nil
 }
