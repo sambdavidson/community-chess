@@ -30,10 +30,10 @@ import (
 /* FLAGS */
 var (
 	gameServerURI  = flag.String("game_server_uri", "localhost", "uri of the game server")
-	gameServerPort = flag.Int("game_server_port", 8081, "port of the game server")
+	gameServerPort = flag.Int("game_server_port", 8080, "port of the game server")
 
 	gameMasterURI  = flag.String("game_master_uri", "localhost", "uri of the game master")
-	gameMasterPort = flag.Int("game_master_port", 8080, "port of the game master")
+	gameMasterPort = flag.Int("game_master_port", 8090, "port of the game master")
 
 	playerRegistrarURI  = flag.String("player_registar_uri", "localhost", "URI of the Player Registrar")
 	playerRegistrarPort = flag.Int("player_registrar_port", 50052, "Port of the Player Registrar")
@@ -201,7 +201,7 @@ func initializeAction(cmdParts []string) {
 			},
 		},
 	})
-	log.Println("ok", out, err)
+	log.Println(out, err)
 }
 
 func createPlayerAction(cmdParts []string) {
@@ -266,6 +266,7 @@ func getGameAction(cmdParts []string) {
 	pCtx, err := auth.AppendPlayerIDToOutgoingContext(ctx, id)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
+		return
 	}
 	out, err := gsCli.Game(pCtx, &gs.GameRequest{})
 	if err != nil {

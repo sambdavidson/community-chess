@@ -3,10 +3,10 @@ package main
 
 /*
 MASTER
-go run .\src\gameserver --slave=false --game_port=8080 --master_port=8090 --game_id=88888888-4444-2222-1111-000000000000
+go run .\src\gameserver --slave=false --game_port=8080 --master_port=8090 --game_id=88888888-4444-2222-1111-000000000000 --debug
 
 SLAVE
-go run .\src\gameserver --slave --game_port=8070 --slave_port=8071 --game_id=88888888-4444-2222-1111-000000000000
+go run .\src\gameserver --slave --game_port=8070 --slave_port=8071 --game_id=88888888-4444-2222-1111-000000000000 --debug
 
 */
 
@@ -20,9 +20,10 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-
+	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/sambdavidson/community-chess/src/gameserver/gamemaster"
 	"github.com/sambdavidson/community-chess/src/gameserver/gameslave"
+	"github.com/sambdavidson/community-chess/src/lib/debug"
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -86,10 +87,25 @@ func main() {
 		}
 		creds := grpc.Creds(credentials.NewTLS(slaveTLS))
 
-		gameServer = grpc.NewServer(creds)
+		gameServer = grpc.NewServer(
+			creds,
+			grpc.UnaryInterceptor(
+				middleware.ChainUnaryServer(
+					debug.UnaryServerInterceptor,
+				),
+			),
+		)
 		gs.RegisterGameServerServer(gameServer, slaveController.GameServerInstance())
 
-		slaveServer = grpc.NewServer(creds)
+		slaveServer = grpc.NewServer(
+			creds,
+			grpc.UnaryInterceptor(
+				middleware.ChainUnaryServer(
+					debug.UnaryServerInterceptor,
+					gameslave.ValidateMasterUnaryServerInterceptor,
+				),
+			),
+		)
 		gs.RegisterGameServerSlaveServer(slaveServer, slaveController.GameServerSlaveInstance())
 
 		asyncServe("GameServer", gameServer, *gamePort)
@@ -109,10 +125,25 @@ func main() {
 			log.Fatalf("failed to build GameMasterController: %v", err)
 		}
 		creds := grpc.Creds(credentials.NewTLS(masterTLS))
-		gameServer = grpc.NewServer(creds)
+		gameServer = grpc.NewServer(
+			creds,
+			grpc.UnaryInterceptor(
+				middleware.ChainUnaryServer(
+					debug.UnaryServerInterceptor,
+				),
+			),
+		)
 		gs.RegisterGameServerServer(gameServer, masterController.GameServerInstance())
 
-		masterServer = grpc.NewServer(creds /*, grpc.UnaryInterceptor(auth.AdminAuthorizerClientInterceptor)*/)
+		masterServer = grpc.NewServer(
+			creds,
+			grpc.UnaryInterceptor(
+				middleware.ChainUnaryServer(
+					debug.UnaryServerInterceptor,
+					gamemaster.MasterAuthUnaryServerInterceptor,
+				),
+			),
+		)
 		gs.RegisterGameServerMasterServer(masterServer, masterController.GameServerMasterInstance())
 
 		asyncServe("GameServer", gameServer, *gamePort)

@@ -39,7 +39,7 @@ message AddSlaveRequest {
 }
 
 message AddSlaveResponse {
-    messages.Game game = 1;
+    string master_id = 1;
 }
 
 message AddPlayersRequest {

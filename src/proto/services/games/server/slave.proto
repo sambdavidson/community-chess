@@ -25,7 +25,6 @@ message ChangeAcceptingVotesResponse {
 }
 
 message GetVotesRequest {
-    string game_id = 1;
 }
 
 message GetVotesResponse {

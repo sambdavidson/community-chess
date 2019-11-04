@@ -70,7 +70,7 @@ func ready() error {
 	return nil
 }
 
-// NewGameSlaveController todo
+// NewGameSlaveController builts a new slave and registers itself to the master.
 func NewGameSlaveController(opts Opts) (*Controller, error) {
 	var err error
 	if controller != nil {
@@ -108,6 +108,7 @@ func NewGameSlaveController(opts Opts) (*Controller, error) {
 			playersRegistrarCli: playerRegistrarCli,
 		},
 		serverSlave: &GameServerSlave{
+			masterID:            res.GetMasterId(),
 			masterCli:           masterCli,
 			playersRegistrarCli: playerRegistrarCli,
 		},
