@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/sambdavidson/community-chess/src/gameserver/game"
 	"github.com/sambdavidson/community-chess/src/proto/messages"
@@ -44,11 +45,12 @@ type Controller struct {
 var (
 	instanceID         string
 	gameID             string
+	gameType           messages.Game_Type
 	gameImplementation = game.Noop
-	// Missing state, history, and game-specific metadata.
-	partialGameProto *messages.Game
-	controller       *Controller
-	slaveTLSConfig   *tls.Config
+	initializeTime     time.Time
+	partialGameProto   *messages.Game
+	controller         *Controller
+	slaveTLSConfig     *tls.Config
 )
 
 // NewGameSlaveController builts a new slave and registers itself to the master.
@@ -105,6 +107,8 @@ func NewGameSlaveController(opts Opts) (*Controller, error) {
 	}); err != nil {
 		return nil, fmt.Errorf("unable to initialize game implementation: %v", err)
 	}
+	gameType = res.GetGame().GetType()
+	initializeTime = time.Unix(0, res.GetGame().GetStartTime())
 	return controller, nil
 }
 

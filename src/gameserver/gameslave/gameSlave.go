@@ -17,19 +17,17 @@ type GameServerSlave struct {
 
 // ChangeAcceptingVotes is called by GameServerMasters to set this GameServerSlave to no longer accept votes. Typically done at end of a voting round.
 func (s *GameServerSlave) ChangeAcceptingVotes(ctx context.Context, in *pb.ChangeAcceptingVotesRequest) (*pb.ChangeAcceptingVotesResponse, error) {
-	return &pb.ChangeAcceptingVotesResponse{}, nil
+	return gameImplementation.ChangeAcceptingVotes(ctx, in)
 }
 
 // GetVotes is called by GameServerMasters get all votes received by this GameServerSlave for the current round.
 func (s *GameServerSlave) GetVotes(ctx context.Context, in *pb.GetVotesRequest) (*pb.GetVotesResponse, error) {
-
-	return &pb.GetVotesResponse{}, nil
+	return gameImplementation.GetVotes(ctx, in)
 }
 
 // UpdateMetadata is called by GameServerMasters to update this slave's metadata.
 func (s *GameServerSlave) UpdateMetadata(ctx context.Context, in *pb.UpdateMetadataRequest) (*pb.UpdateMetadataResponse, error) {
-
-	return &pb.UpdateMetadataResponse{}, nil
+	return gameImplementation.UpdateMetadata(ctx, in)
 }
 
 // UpdateState is called by GameServerMasters to update this slave's state of the game.

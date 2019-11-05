@@ -2,11 +2,13 @@ package gamemaster
 
 import (
 	"context"
-	"log"
+
+	"google.golang.org/grpc/codes"
 
 	"github.com/sambdavidson/community-chess/src/proto/messages"
 	pb "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
+	"google.golang.org/grpc/status"
 )
 
 // GameServer implements the GameServer service.
@@ -28,7 +30,7 @@ func (s *GameServer) Game(ctx context.Context, in *pb.GameRequest) (*pb.GameResp
 	if err != nil {
 		return nil, err
 	}
-	f := &pb.GameResponse{
+	return &pb.GameResponse{
 		Game: &messages.Game{
 			Type:      gameType,
 			Id:        gameID,
@@ -38,49 +40,40 @@ func (s *GameServer) Game(ctx context.Context, in *pb.GameRequest) (*pb.GameResp
 			State:     stateRes.GetState(),
 			History:   historyRes.GetHistory(),
 		},
-	}
-	log.Println(f)
-	return f, nil
+	}, nil
 }
 
 // Metadata gets this game's metadata.
 func (s *GameServer) Metadata(ctx context.Context, in *pb.MetadataRequest) (*pb.MetadataResponse, error) {
-
-	return &pb.MetadataResponse{}, nil
+	return gameImplementation.Metadata(ctx, in)
 }
 
 // State gets this game's state.
 func (s *GameServer) State(ctx context.Context, in *pb.StateRequest) (*pb.StateResponse, error) {
-
-	return &pb.StateResponse{}, nil
+	return gameImplementation.State(ctx, in)
 }
 
 // History gets this game's history.
 func (s *GameServer) History(ctx context.Context, in *pb.HistoryRequest) (*pb.HistoryResponse, error) {
-
-	return &pb.HistoryResponse{}, nil
+	return gameImplementation.History(ctx, in)
 }
 
 // Join joins this game.
 func (s *GameServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResponse, error) {
-
-	return &pb.JoinResponse{}, nil
+	return gameImplementation.Join(ctx, in)
 }
 
 // Leave leaves this game.
 func (s *GameServer) Leave(ctx context.Context, in *pb.LeaveRequest) (*pb.LeaveResponse, error) {
-
-	return &pb.LeaveResponse{}, nil
+	return gameImplementation.Leave(ctx, in)
 }
 
 // PostVote posts a vote to this game.
 func (s *GameServer) PostVote(ctx context.Context, in *pb.PostVoteRequest) (*pb.PostVoteResponse, error) {
-
-	return &pb.PostVoteResponse{}, nil
+	return gameImplementation.PostVote(ctx, in)
 }
 
 // Status returns the status of this game (and/or the underlying server).
 func (s *GameServer) Status(ctx context.Context, in *pb.StatusRequest) (*pb.StatusResponse, error) {
-
-	return &pb.StatusResponse{}, nil
+	return nil, status.Errorf(codes.Unimplemented, "todo")
 }

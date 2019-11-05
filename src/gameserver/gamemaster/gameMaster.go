@@ -50,7 +50,7 @@ func (s *GameServerMaster) AddSlave(ctx context.Context, in *pb.AddSlaveRequest)
 	slaveID, err := validateSlave(ctx)
 	if err != nil {
 		return nil, err
-	}  
+	}
 	if gameImplementation == game.Noop {
 		return nil, status.Errorf(codes.FailedPrecondition, "master has not yet been initialized")
 	}
@@ -108,9 +108,7 @@ func (s *GameServerMaster) RemovePlayers(ctx context.Context, in *pb.RemovePlaye
 
 // StopGame is called by an authorized user and shuts down this game.
 func (s *GameServerMaster) StopGame(ctx context.Context, in *pb.StopGameRequest) (*pb.StopGameResponse, error) {
-	log.Println("StopGame", in)
-	// TODO
-	return &pb.StopGameResponse{}, nil
+	return nil, status.Error(codes.Unimplemented, "todo")
 }
 
 // otherSlavesUpdateState updates the state of all slaves except skipSlave.
