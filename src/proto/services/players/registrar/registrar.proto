@@ -11,12 +11,15 @@ package registrar;
 service PlayersRegistrar {
     rpc RegisterPlayer (RegisterPlayerRequest) returns (RegisterPlayerResponse);
     rpc GetPlayer (GetPlayerRequest) returns (GetPlayerReponse);
+    rpc Login(LoginRequest) returns (LoginResponse);
+    rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+
+    // Internal Services Only
+    rpc TokenSecrets(TokenSecretsRequest) returns (TokenSecretsResponse);
 }
 
 message RegisterPlayerRequest {
-    string username = 1;
-
-    
+    string username = 1;    
     // TODO: oauth stuff
     // email, link to social media and stuff
 }
@@ -31,4 +34,37 @@ message GetPlayerRequest {
 
 message GetPlayerReponse {
     messages.Player player = 1;
+}
+
+message LoginRequest {
+    // TODO: password, OAUTH, other login strats. 
+    string username = 1;
+}
+
+message LoginResponse {
+    // Short lived JWT.
+    string token = 1;
+}
+
+message RefreshTokenRequest {
+    string token = 1;
+}
+
+message RefreshTokenResponse {
+    string token = 1;
+}
+
+message TokenSecretsRequest {
+}
+
+message TokenSecretsResponse {
+    // Secrets are valid up until the next timestamp. Sorted.
+    repeated TimeToSecret history = 1;
+
+    message TimeToSecret {
+        // Seconds since epoch.
+        int64 time = 1;
+        // Token secret.
+        string secret = 2; 
+    }
 }

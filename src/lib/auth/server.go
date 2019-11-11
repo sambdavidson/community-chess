@@ -1,3 +1,4 @@
+// Package auth provided helpers for various auth/metadata fields used throughout the app.
 package auth
 
 import (

@@ -9,140 +9,63 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"log"
 	"os"
-	"sort"
 	"strings"
 
-	"github.com/sambdavidson/community-chess/src/debugcli/certificate"
-
 	"github.com/sambdavidson/community-chess/src/proto/messages"
-	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
-	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
-/* FLAGS */
+/* State */
 var (
-	gameServerURI  = flag.String("game_server_uri", "localhost", "uri of the game server")
-	gameServerPort = flag.Int("game_server_port", 8080, "port of the game server")
+	commands = map[string]command{}
 
-	gameMasterURI  = flag.String("game_master_uri", "localhost", "uri of the game master")
-	gameMasterPort = flag.Int("game_master_port", 8090, "port of the game master")
-
-	playerRegistrarURI  = flag.String("player_registar_uri", "localhost", "URI of the Player Registrar")
-	playerRegistrarPort = flag.Int("player_registrar_port", 9000, "Port of the Player Registrar")
-)
-
-/* Clients which are defined in init() */
-var (
-	gsConn       *grpc.ClientConn
-	gsCli        gs.GameServerClient
-	gmConn       *grpc.ClientConn
-	gmCli        gs.GameServerMasterClient
-	prConn       *grpc.ClientConn
-	prCli        pr.PlayersRegistrarClient
-	commands     map[string]command
+	// IDs to objects
 	knownPlayers = map[string]*messages.Player{}
-	activePlayer *messages.Player
-	activeGame   *messages.Game
+	knownGames   = map[string]*messages.Game{}
+	// IDs using IDConsts
+	activeIDs = map[string]string{}
+)
+
+// IDConsts
+const (
+	ACTIVEPLAYERID = "ACTIVEPLAYERID"
+	ACTIVEGAMEID   = "ACTIVEGAMEID"
 )
 
 func init() {
 	flag.Parse()
-	gsConn, gsCli = getGameServer()
-	gmConn, gmCli = getGameMaster()
-	prConn, prCli = getPlayerRegistrar()
-	commands = map[string]command{
-		"initialize": command{
-			helpText: "initializes the master for a game\n\tE.g. `initialize <game-id>`",
-			action:   initializeAction,
-		},
-		"create_player": command{
-			helpText: "creates a new player with username, updates active player with created player\n\tE.g. 'create_player sam'",
-			action:   createPlayerAction,
-		},
-		"get_player": command{
-			helpText: "gets a player, updates active player if found\n\tE.g. 'get_player 123456'",
-			action:   getPlayerAction,
-		},
-		"list_known_players": command{
-			helpText: "lists all locally known players",
-			action:   listKnownPlayersAction,
-		},
-		"get_game": command{
-			helpText: "gets a game\n\tE.g. 'get_game 123456'",
-			action:   getGameAction,
-		},
-		"join": command{
-			helpText: "join the game, either the active player or a defined one\n\tE.g. 'join' or 'join <player_id>'",
-			action:   joinAction,
-		},
-		"leave": command{
-			helpText: "player leaves the game, either the active player or a defined one\n\tE.g. 'leave' or 'leave 123456 987654'",
-			action:   leaveAction,
-		},
-		"post_vote": command{
-			helpText: "posts a vote to a game",
-			action:   postVotesAction,
-		},
-		"help": command{
-			helpText: "displays all commands and they help text",
-			action:   helpAction,
-		},
-	}
 }
 
 type command struct {
 	helpText string
-	action   func(cmdParts []string)
+	action   func(actionArgs)
 }
 
-func getGameServer() (*grpc.ClientConn, gs.GameServerClient) {
-	conn, err := grpc.Dial(
-		fmt.Sprintf("%s:%d", *gameServerURI, *gameServerPort),
-		grpc.WithTransportCredentials(credentials.NewTLS(certificate.ClientTLSConfig())),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return conn, gs.NewGameServerClient(conn)
+type actionArgs struct {
+	gameID         string
+	playerID       string
+	otherUserInput map[string]string
 }
 
-func getGameMaster() (*grpc.ClientConn, gs.GameServerMasterClient) {
-	conn, err := grpc.Dial(
-		fmt.Sprintf("%s:%d", *gameMasterURI, *gameMasterPort),
-		grpc.WithTransportCredentials(credentials.NewTLS(certificate.InternalTLSConfig())),
-	)
-	if err != nil {
-		log.Fatal(err)
+func defaultArgs() actionArgs {
+	return actionArgs{
+		gameID:         activeIDs[ACTIVEGAMEID],
+		playerID:       activeIDs[ACTIVEPLAYERID],
+		otherUserInput: map[string]string{},
 	}
-	return conn, gs.NewGameServerMasterClient(conn)
 }
 
-func getPlayerRegistrar() (*grpc.ClientConn, pr.PlayersRegistrarClient) {
-	conn, err := grpc.Dial(
-		fmt.Sprintf("%s:%d", *playerRegistrarURI, *playerRegistrarPort),
-		grpc.WithTransportCredentials(credentials.NewTLS(certificate.ClientTLSConfig())),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return conn, pr.NewPlayersRegistrarClient(conn)
+func addPlayer(p *messages.Player) {
+	id := p.GetId()
+	knownPlayers[id] = p
+	activeIDs[ACTIVEPLAYERID] = id
+	fmt.Printf("Updated active player ID to: %s\n", id)
 }
-
-func helpAction(cmdParts []string) {
-	fmt.Println("Commands: ")
-	var keys []string
-	for k := range commands {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		cmd := commands[k]
-		fmt.Printf("- '%s': %s\n", k, cmd.helpText)
-	}
+func addGame(g *messages.Game) {
+	id := g.GetId()
+	knownGames[id] = g
+	activeIDs[ACTIVEGAMEID] = id
+	fmt.Printf("Updated active game ID to: %s\n", id)
 }
 
 func listKnownPlayersAction(cmdParts []string) {
@@ -152,16 +75,19 @@ func listKnownPlayersAction(cmdParts []string) {
 }
 
 func main() {
+	defer clientConnectionCleanup()
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Print("Front End Client\nEnter 'help' for commands\n\n")
+	fmt.Print("Front End Client\nEnter 'help' for commands, or 'quit' to exit.\n\n")
 	run := true
 	for run {
 		fmt.Print("> ")
 		read, _ := reader.ReadString('\n')
 		text := strings.Trim(read, " \n\r")
-		cmdParts := strings.Split(text, " ")
-		verb := strings.ToLower(cmdParts[0])
+		verb, args := parseInput(text)
+		if verb == "" {
+			continue
+		}
 		if verb == "quit" || verb == "exit" {
 			break
 		}
@@ -171,9 +97,40 @@ func main() {
 			fmt.Printf("unknown command: %s\n", verb)
 			continue
 		}
-		cmd.action(cmdParts)
+		cmd.action(args)
 	}
-	gmConn.Close()
-	gsConn.Close()
-	prConn.Close()
+}
+
+func parseInput(in string) (string, actionArgs) {
+	args := defaultArgs()
+	parts := strings.Split(in, " ")
+	if len(parts) == 0 {
+		return "", args
+	}
+	verb := parts[0]
+	kvMap := map[string]string{}
+	for _, v := range parts[1:] {
+		kv := strings.Split(v, "=")
+		if len(kv) != 2 {
+			fmt.Printf("bad input, should be key value pair: %s\n", v)
+			return "", args
+		}
+		if _, ok := kvMap[kv[0]]; ok {
+			fmt.Printf("key '%s' defined twice\n", kv[0])
+		}
+		kvMap[kv[0]] = kv[1]
+	}
+
+	for k, v := range kvMap {
+		switch k {
+		case "game":
+			args.gameID = v
+		case "player":
+			args.playerID = v
+		default:
+			args.otherUserInput[k] = v
+		}
+	}
+
+	return verb, args
 }
