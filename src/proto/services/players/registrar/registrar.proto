@@ -15,7 +15,7 @@ service PlayersRegistrar {
     rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
 
     // Internal Services Only
-    rpc TokenSecrets(TokenSecretsRequest) returns (TokenSecretsResponse);
+    rpc TokenKeys(TokenKeysRequest) returns (TokenKeysResponse);
 }
 
 message RegisterPlayerRequest {
@@ -54,17 +54,17 @@ message RefreshTokenResponse {
     string token = 1;
 }
 
-message TokenSecretsRequest {
-}
+message TokenKeysRequest {}
 
-message TokenSecretsResponse {
-    // Secrets are valid up until the next timestamp. Sorted.
-    repeated TimeToSecret history = 1;
+message TokenKeysResponse {
+    // Secrets are valid up until the next timestamp. Sorted in newest to oldest.
+    repeated TimeToKey history = 1;
 
-    message TimeToSecret {
+    message TimeToKey {
         // Seconds since epoch.
-        int64 time = 1;
-        // Token secret.
-        string secret = 2; 
+        int64 not_before = 1;
+        int64 not_after = 2;
+        // RSA512 Public Key
+        string key = 3; 
     }
 }

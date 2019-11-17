@@ -2,6 +2,7 @@ package playertokens
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -59,7 +60,7 @@ type PlayerAuthIngressArgs struct {
 func NewPlayerAuthIngress(args PlayerAuthIngressArgs) PlayerAuthIngress {
 	p := &playerAuthIngress{
 		playersRegistrarClient: args.playersRegistrarClient,
-		secrets:                []*registrar.TokenSecretsResponse_TimeToSecret{},
+		keys:                   []*registrar.TokenKeysResponse_TimeToKey{},
 	}
 	return p
 }
@@ -67,8 +68,8 @@ func NewPlayerAuthIngress(args PlayerAuthIngressArgs) PlayerAuthIngress {
 type playerAuthIngress struct {
 	playersRegistrarClient registrar.PlayersRegistrarClient
 
-	mux     sync.Mutex
-	secrets []*registrar.TokenSecretsResponse_TimeToSecret
+	mux  sync.Mutex
+	keys []*registrar.TokenKeysResponse_TimeToKey
 }
 
 func (p *playerAuthIngress) TokenValidationUnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -110,6 +111,23 @@ func (p *playerAuthIngress) ValidatedPlayerIDFromContext(ctx context.Context) (s
 }
 
 func (p *playerAuthIngress) keyForToken(t *jwt.Token) (interface{}, error) {
+	if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+		return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
+	}
+
+	c, ok := t.Claims.(jwt.StandardClaims)
+	if !ok {
+		return nil, fmt.Errorf("player token claims are incorrect type")
+	}
+
+	// Keys are sorted to newest to latest, so the first key we are after the NotBefore should be correct.
+	for _, k := range p.keys {
+		if c.IssuedAt > k.GetNotBefore() {
+			// TODO: locate the best key for this player token.
+			// Maybe RPC to get the latest keys if its missing.
+		}
+	}
+
 	// TODO: use the PR client to get internal keys for this.
 	return "foobar", nil
 }
@@ -117,7 +135,7 @@ func (p *playerAuthIngress) keyForToken(t *jwt.Token) (interface{}, error) {
 func (p *playerAuthIngress) refreshSecrets() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	res, err := p.playersRegistrarClient.TokenSecrets(ctx, &registrar.TokenSecretsRequest{})
+	res, err := p.playersRegistrarClient.TokenKeys(ctx, &registrar.TokenKeysRequest{})
 	if err != nil {
 		log.Printf("error: unable to refresh player token ingress secrets: %v", err)
 		return
@@ -127,6 +145,6 @@ func (p *playerAuthIngress) refreshSecrets() {
 	}
 	p.mux.Lock()
 	defer p.mux.Unlock()
-	p.secrets = res.GetHistory()
+	p.keys = res.GetHistory()
 
 }
