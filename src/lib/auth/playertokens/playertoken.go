@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"sync"
 	"time"
 
@@ -76,7 +77,7 @@ type PlayerAuthIngressArgs struct {
 func NewPlayerAuthIngress(args PlayerAuthIngressArgs) PlayerAuthIngress {
 	p := &playerAuthIngress{
 		playersRegistrarClient: args.PlayersRegistrarClient,
-		keys:                   []*registrar.TokenKeysResponse_TimeToKey{},
+		keys:                   []*registrar.TokenPublicKeysResponse_TimeToPublicKey{},
 		ticker:                 time.NewTicker(args.AutoRefreshCadence),
 	}
 	go func() {
@@ -92,11 +93,12 @@ type playerAuthIngress struct {
 	playersRegistrarClient registrar.PlayersRegistrarClient
 
 	mux    sync.Mutex
-	keys   []*registrar.TokenKeysResponse_TimeToKey
+	keys   []*registrar.TokenPublicKeysResponse_TimeToPublicKey
 	ticker *time.Ticker
 }
 
 func (p *playerAuthIngress) TokenValidationUnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	fmt.Println("CALL OF INTERCEPTOR")
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, errMissingMetadata
@@ -105,11 +107,11 @@ func (p *playerAuthIngress) TokenValidationUnaryServerInterceptor(ctx context.Co
 	if !ok || len(vals) == 0 {
 		return nil, errMissingPlayerToken
 	}
-	t, err := jwt.Parse(vals[0], p.keyForToken)
+	t, err := jwt.ParseWithClaims(vals[0], &jwt.StandardClaims{}, p.keyForToken)
 	if err != nil {
 		return nil, errBadPlayerToken
 	}
-	c, ok := t.Claims.(jwt.StandardClaims)
+	c, ok := t.Claims.(*jwt.StandardClaims)
 	if !ok {
 		return nil, errBadPlayerToken
 	}
@@ -127,48 +129,67 @@ func (p *playerAuthIngress) keyForToken(t *jwt.Token) (interface{}, error) {
 		return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
 	}
 
-	c, ok := t.Claims.(jwt.StandardClaims)
+	c, ok := t.Claims.(*jwt.StandardClaims)
 	if !ok {
 		return nil, fmt.Errorf("player token claims are incorrect type")
 	}
 
-	return p.keyForTime(c.IssuedAt)
+	b, err := p.keyForTime(c.IssuedAt)
+	if err != nil || b == nil {
+		return nil, err
+	}
+	return jwt.ParseRSAPublicKeyFromPEM(b)
 }
 
-func (p *playerAuthIngress) keyForTime(iss int64) (string, error) {
+func (p *playerAuthIngress) keyForTime(iss int64) ([]byte, error) {
 	// Keys are sorted to newest to oldest, so the first key we are after the NotBefore should be correct.
 	retry := true
+	retried := false
 	for retry {
-		retry = false
 		for _, k := range p.keys {
+			retry = false
 			if iss > k.GetNotBefore() {
 				if iss > k.GetNotAfter() {
-					p.refreshPublicKeys()
-					retry = true
+					if !retried {
+						retry = true
+					}
 					break
 				} else {
-					return k.GetKey(), nil
+					return k.GetPemPublicKey(), nil
 				}
 			}
 		}
+		if retry && !retried {
+			p.refreshPublicKeys()
+			retried = true
+		}
 	}
-
-	return "", fmt.Errorf("missing key for time: %d", iss)
+	return nil, fmt.Errorf("missing key for time: %d", iss)
 }
 
 func (p *playerAuthIngress) refreshPublicKeys() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	res, err := p.playersRegistrarClient.TokenKeys(ctx, &registrar.TokenKeysRequest{})
+	res, err := p.playersRegistrarClient.TokenPublicKeys(ctx, &registrar.TokenPublicKeysRequest{})
 	if err != nil {
 		log.Printf("error: unable to refresh player token public keys: %v", err)
 		return
 	}
-	if len(res.GetHistory()) == 0 {
+	history := res.GetHistory()
+	if len(history) == 0 {
 		log.Printf("error: bad player token public keys, history is empty")
+		return
+	}
+	var newest int64 = math.MaxInt64
+	for _, hk := range history {
+		if hk.GetNotBefore() > newest {
+			log.Printf("error: public key history is not chronologically newest to oldest: %v", history)
+			return
+		}
+		newest = hk.GetNotBefore()
 	}
 	p.mux.Lock()
 	defer p.mux.Unlock()
-	p.keys = res.GetHistory()
+	p.keys = history
 
 }

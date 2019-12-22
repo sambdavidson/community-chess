@@ -15,7 +15,7 @@ service PlayersRegistrar {
     rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
 
     // Internal Services Only
-    rpc TokenKeys(TokenKeysRequest) returns (TokenKeysResponse);
+    rpc TokenPublicKeys(TokenPublicKeysRequest) returns (TokenPublicKeysResponse);
 }
 
 message RegisterPlayerRequest {
@@ -54,17 +54,17 @@ message RefreshTokenResponse {
     string token = 1;
 }
 
-message TokenKeysRequest {}
+message TokenPublicKeysRequest {}
 
-message TokenKeysResponse {
-    // Secrets are valid up until the next timestamp. Sorted in newest to oldest.
-    repeated TimeToKey history = 1;
+message TokenPublicKeysResponse {
+    // Public keys are used up until the next timestamp. Sorted in newest to oldest.
+    repeated TimeToPublicKey history = 1;
 
-    message TimeToKey {
+    message TimeToPublicKey {
         // Seconds since epoch.
         int64 not_before = 1;
         int64 not_after = 2;
-        // RSA512 Public Key
-        string key = 3; 
+        // PEM encoded RSA 2048 Public Key
+        bytes pem_public_key = 3; 
     }
 }

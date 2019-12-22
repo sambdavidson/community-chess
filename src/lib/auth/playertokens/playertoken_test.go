@@ -2,9 +2,16 @@ package playertokens
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"math"
+	"reflect"
 	"testing"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 
 	"google.golang.org/grpc/metadata"
 
@@ -70,18 +77,179 @@ func TestAppendingPlayerTokensToOutgoingContext(t *testing.T) {
 }
 
 func TestIngressUnaryInterceptor(t *testing.T) {
+	pk1 := privateRSA(t)
+	pk2 := privateRSA(t)
+
+	wantPID := "testPlayerId"
+	now := time.Unix(100, 0)
+	jwt.TimeFunc = func() time.Time { return now } // Stub out time.Now such that we can test invalid certs.
+
+	type ttpk = registrar.TokenPublicKeysResponse_TimeToPublicKey
+
+	jwtSignedString := func(pk *rsa.PrivateKey, claims *jwt.StandardClaims) string {
+		j := jwt.NewWithClaims(jwt.SigningMethodRS512, claims)
+		ss, err := j.SignedString(pk)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return ss
+	}
+
 	for _, tc := range []struct {
-		desc string
-		// struct def
+		desc             string
+		initHistory      []*registrar.TokenPublicKeysResponse_TimeToPublicKey
+		registrarHistory []*registrar.TokenPublicKeysResponse_TimeToPublicKey
+		jwt              string
+		wantErr          bool
 	}{
-		// test cases
+		{
+			desc: "happy init history has pk",
+			initHistory: []*ttpk{
+				historyKey(t, pk1, 0, 50),
+			},
+			registrarHistory: []*ttpk{
+				historyKey(t, pk1, 0, 50),
+			},
+			jwt: jwtSignedString(pk1, &jwt.StandardClaims{
+				IssuedAt:  10,
+				NotBefore: 10,
+				ExpiresAt: 150,
+				Subject:   wantPID,
+			}),
+			wantErr: false,
+		},
+		{
+			desc:        "happy query for missing history",
+			initHistory: []*ttpk{},
+			registrarHistory: []*ttpk{
+				historyKey(t, pk1, 0, 50),
+			},
+			jwt: jwtSignedString(pk1, &jwt.StandardClaims{
+				IssuedAt:  10,
+				NotBefore: 10,
+				ExpiresAt: 150,
+				Subject:   wantPID,
+			}),
+			wantErr: false,
+		},
+		{
+			desc: "happy new key query for new history",
+			initHistory: []*ttpk{
+				historyKey(t, pk1, 0, 50),
+			},
+			registrarHistory: []*ttpk{
+				historyKey(t, pk2, 50, 90),
+				historyKey(t, pk1, 0, 50),
+			},
+			jwt: jwtSignedString(pk2, &jwt.StandardClaims{
+				IssuedAt:  60,
+				NotBefore: 60,
+				ExpiresAt: 200,
+				Subject:   wantPID,
+			}),
+			wantErr: false,
+		},
+		{
+			desc: "sad missing jwt",
+			initHistory: []*ttpk{
+				historyKey(t, pk1, 0, 50),
+			},
+			registrarHistory: []*ttpk{
+				historyKey(t, pk1, 0, 50),
+			},
+			jwt:     "",
+			wantErr: true,
+		},
+		{
+			desc: "sad bad key",
+			initHistory: []*ttpk{
+				historyKey(t, pk1, 0, 50),
+			},
+			registrarHistory: []*ttpk{
+				historyKey(t, pk1, 0, 50),
+			},
+			jwt: jwtSignedString(pk2, &jwt.StandardClaims{ // pk2
+				IssuedAt:  10,
+				NotBefore: 10,
+				ExpiresAt: 150,
+				Subject:   wantPID,
+			}),
+			wantErr: true,
+		},
+		{
+			desc: "sad key out of range",
+			initHistory: []*ttpk{
+				historyKey(t, pk1, 0, 50),
+			},
+			registrarHistory: []*ttpk{
+				historyKey(t, pk1, 0, 50),
+			},
+			jwt: jwtSignedString(pk1, &jwt.StandardClaims{ // pk2
+				IssuedAt:  60,
+				NotBefore: 60,
+				ExpiresAt: 150,
+				Subject:   wantPID,
+			}),
+			wantErr: true,
+		},
 	} {
-		// test runner
 		t.Run(tc.desc, func(t *testing.T) {
-			t.Skip()
-			// TODO: Use the mock and build out tests for the interceptor.
-			// You will need to do some crypto auth stuff using the JWT library.
+			ing := &playerAuthIngress{
+				playersRegistrarClient: &mockPlayerRegistrarClient{
+					keys: tc.registrarHistory,
+				},
+				keys: tc.initHistory,
+			}
+			ctx := metadata.NewIncomingContext(context.TODO(), metadata.MD{
+				playerTokenKey: []string{tc.jwt},
+			})
+			//	TokenValidationUnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error)
+			_, gotErr := ing.TokenValidationUnaryServerInterceptor(ctx,
+				/* req */ nil,
+				/* info */ nil,
+				/* handler */ func(ctx context.Context, req interface{}) (interface{}, error) {
+					// If the handler is called, the interceptor validated the request.
+					gotPID, err := ValidatedPlayerIDFromIncomingContext(ctx)
+					if err != nil {
+						t.Errorf("handler error getting player ID from context: %v", err)
+					}
+					if gotPID != wantPID {
+						t.Errorf("validated player ID incorrect got: %s; want: %s", gotPID, wantPID)
+					}
+					return nil, nil
+				})
+			if tc.wantErr {
+				if gotErr == nil {
+					t.Errorf("wanted non-nil error")
+				}
+			} else if gotErr != nil {
+				t.Errorf("wanted nil error; got: %v", gotErr)
+			}
+
 		})
+	}
+}
+
+func privateRSA(t *testing.T) *rsa.PrivateKey {
+	pk, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return pk
+}
+
+func historyKey(t *testing.T, pk *rsa.PrivateKey, notbefore, notafter int64) *registrar.TokenPublicKeysResponse_TimeToPublicKey {
+	pubASN1, err := x509.MarshalPKIXPublicKey(&pk.PublicKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &registrar.TokenPublicKeysResponse_TimeToPublicKey{
+		PemPublicKey: pem.EncodeToMemory(&pem.Block{
+			Type:  "RSA PUBLIC KEY",
+			Bytes: pubASN1,
+		}),
+		NotBefore: notbefore,
+		NotAfter:  notafter,
 	}
 }
 
@@ -137,11 +305,11 @@ func TestValidatedPlayerIDFromIncomingContext(t *testing.T) {
 
 func TestAutoRefresh(t *testing.T) {
 	cli := &mockPlayerRegistrarClient{
-		keys: []*registrar.TokenKeysResponse_TimeToKey{
-			&registrar.TokenKeysResponse_TimeToKey{
-				Key:       "abc",
-				NotBefore: 0,
-				NotAfter:  math.MaxInt64,
+		keys: []*registrar.TokenPublicKeysResponse_TimeToPublicKey{
+			&registrar.TokenPublicKeysResponse_TimeToPublicKey{
+				PemPublicKey: []byte{0x1, 0x2, 0x3},
+				NotBefore:    0,
+				NotAfter:     math.MaxInt64,
 			},
 		},
 	}
@@ -150,14 +318,13 @@ func TestAutoRefresh(t *testing.T) {
 		PlayersRegistrarClient: cli,
 	}).(*playerAuthIngress)
 	time.Sleep(time.Second)
-	cli.keys[0].Key = "123" // Update key and see if that is reflected
+	cli.keys[0].PemPublicKey = []byte{0x11, 0x22, 0x33} // Update key and see if that is reflected
 	time.Sleep(time.Second)
 	ing.ticker.Stop()
 	if cli.calls < 8 || cli.calls > 9 {
 		t.Errorf("expected player registrar client to be called either 8 or 9 times, instead was called %d times", cli.calls)
 	}
-
-	if len(ing.keys) != 1 && ing.keys[0].Key != "123" {
+	if len(ing.keys) != 1 && !reflect.DeepEqual(ing.keys[0].PemPublicKey, []byte{0x11, 0x22, 0x33}) {
 		t.Errorf("invalid ending keys, got: %v; want: %v", ing.keys, cli.keys)
 	}
 }
@@ -169,7 +336,7 @@ var (
 
 type mockPlayerRegistrarClient struct {
 	calls int
-	keys  []*registrar.TokenKeysResponse_TimeToKey
+	keys  []*registrar.TokenPublicKeysResponse_TimeToPublicKey
 }
 
 func (c *mockPlayerRegistrarClient) RegisterPlayer(ctx context.Context, in *registrar.RegisterPlayerRequest, opts ...grpc.CallOption) (*registrar.RegisterPlayerResponse, error) {
@@ -184,9 +351,9 @@ func (c *mockPlayerRegistrarClient) Login(ctx context.Context, in *registrar.Log
 func (c *mockPlayerRegistrarClient) RefreshToken(ctx context.Context, in *registrar.RefreshTokenRequest, opts ...grpc.CallOption) (*registrar.RefreshTokenResponse, error) {
 	return nil, unimplementedErr
 }
-func (c *mockPlayerRegistrarClient) TokenKeys(ctx context.Context, in *registrar.TokenKeysRequest, opts ...grpc.CallOption) (*registrar.TokenKeysResponse, error) {
+func (c *mockPlayerRegistrarClient) TokenPublicKeys(ctx context.Context, in *registrar.TokenPublicKeysRequest, opts ...grpc.CallOption) (*registrar.TokenPublicKeysResponse, error) {
 	c.calls++
-	return &registrar.TokenKeysResponse{
+	return &registrar.TokenPublicKeysResponse{
 		History: c.keys,
 	}, nil
 }
