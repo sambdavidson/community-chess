@@ -39,6 +39,7 @@ message GetPlayerReponse {
 message LoginRequest {
     // TODO: password, OAUTH, other login strats. 
     string username = 1;
+    int32 number_suffix = 2;
 }
 
 message LoginResponse {
@@ -47,7 +48,6 @@ message LoginResponse {
 }
 
 message RefreshTokenRequest {
-    string token = 1;
 }
 
 message RefreshTokenResponse {

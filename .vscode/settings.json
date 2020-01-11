@@ -1,9 +1,10 @@
 {
     "protoc": {
+        "compile_on_save": true,
         "options": [
             "--proto_path=${env.GOPATH}/src",
             "--proto_path=src/proto",
-            "--go_out=src/proto"
+            "--go_out=plugins=grpc:src/proto",
         ]
     }
 }

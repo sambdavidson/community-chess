@@ -1,4 +1,4 @@
-package playertokens
+package grpcplayertokens
 
 import (
 	"context"

@@ -36,7 +36,7 @@ var (
 // Initializes the CA if it doesn't already exist.
 func init() {
 	log.Println("Initializing TLS CA library...")
-	if err := loadCAFiles(); err != nil {
+	if err := loadCAFiles(*caDirectory); err != nil {
 		log.Printf("Error loading existing CA files: %v\n", err)
 		if _, err = RekeyCA(); err != nil {
 			log.Fatalf("Unable rekey CA: %v\n", err)
@@ -123,8 +123,8 @@ func RekeyCA() ([]byte, error) {
 	return caPEM.Bytes(), nil
 }
 
-func loadCAFiles() error {
-	caCertBytesPEM, err := ioutil.ReadFile(filepath.Join(*caDirectory, caCertFileName))
+func loadCAFiles(dir string) error {
+	caCertBytesPEM, err := ioutil.ReadFile(filepath.Join(dir, caCertFileName))
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func loadCAFiles() error {
 		return err
 	}
 
-	caPrivateKeyPEM, err := ioutil.ReadFile(filepath.Join(*caDirectory, caPrivateKeyFileName))
+	caPrivateKeyPEM, err := ioutil.ReadFile(filepath.Join(dir, caPrivateKeyFileName))
 	if err != nil {
 		return err
 	}

@@ -21,7 +21,7 @@ message Game {
     // UUIDv4 uniquely identifying the game. Used as a key for many requests
     string id = 2;
     
-    // Start time of this game in UnixNanos since Epoch 
+    // Start time of this game in Unix Nanos since Epoch 
     int64 start_time = 3;
     
     // This will probably need to be changed when on a networked cloud. 

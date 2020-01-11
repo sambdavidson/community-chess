@@ -27,7 +27,9 @@ func initializeAction(cmdParts []string) {
 			Type: messages.Game_CHESS,
 			Metadata: &messages.Game_Metadata{
 				Title: "foo",
+
 				Rules: &messages.Game_Metadata_Rules{
+					VoteApplication: &messages.Game_Metadata_Rules_VoteAppliedImmediately_{},
 					GameSpecific: &messages.Game_Metadata_Rules_ChessRules{
 						ChessRules: &games.ChessRules{
 							BalanceEnforcement: &games.ChessRules_TolerateDifference{
