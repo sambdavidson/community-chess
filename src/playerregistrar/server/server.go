@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 
@@ -50,7 +49,6 @@ func New(opts *Opts) (*Server, error) {
 func (s *Server) RegisterPlayer(ctx context.Context, in *pb.RegisterPlayerRequest) (*pb.RegisterPlayerResponse, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	log.Printf("RegisterPlayer: %v\n", in)
 
 	if len(in.GetUsername()) < 2 {
 		return nil, status.Error(codes.InvalidArgument, "Username too short.")
@@ -110,9 +108,8 @@ func (s *Server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginRespo
 				return &pb.LoginResponse{
 					Token: token,
 				}, nil
-			} else {
-				return nil, status.Error(codes.Internal, "Missing player data.")
 			}
+			return nil, status.Error(codes.Internal, "Missing player data.")
 		}
 	}
 	return nil, status.Error(codes.PermissionDenied, "Bad login.")

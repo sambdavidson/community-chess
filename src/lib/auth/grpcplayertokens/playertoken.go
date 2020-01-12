@@ -64,8 +64,17 @@ func ValidatedPlayerIDFromIncomingContext(ctx context.Context) (string, error) {
 
 // PlayerAuthIngress is an object that validates incoming Player token ingress.
 type PlayerAuthIngress interface {
-	TokenValidationUnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error)
+	GetUnaryServerInterceptor(failureMode ValidationFailureMode) grpc.UnaryServerInterceptor
 }
+
+// ValidationFailureMode is an enum for what to do if validation of player tokens fails
+type ValidationFailureMode int
+
+// Possible failures modes for validation failure
+const (
+	Reject = iota
+	Ignore
+)
 
 // PlayerAuthIngressArgs are the arguments for a new PlayerAuthIngress
 type PlayerAuthIngressArgs struct {
@@ -97,31 +106,43 @@ type playerAuthIngress struct {
 	ticker *time.Ticker
 }
 
-func (p *playerAuthIngress) TokenValidationUnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	fmt.Println("CALL OF INTERCEPTOR")
+func (p *playerAuthIngress) GetUnaryServerInterceptor(failureMode ValidationFailureMode) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		err := p.tokenToMDSubject(ctx, req)
+		if err != nil {
+			if failureMode == Reject {
+				return nil, err
+			}
+		}
+		return handler(ctx, req)
+	}
+}
+
+func (p *playerAuthIngress) tokenToMDSubject(ctx context.Context, req interface{}) error {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return nil, errMissingMetadata
+		return errMissingMetadata
 	}
+	md[playerValidatedID] = nil
+
 	vals, ok := md[playerTokenKey]
 	if !ok || len(vals) == 0 {
-		return nil, errMissingPlayerToken
+		return errMissingPlayerToken
 	}
 	t, err := jwt.ParseWithClaims(vals[0], &jwt.StandardClaims{}, p.keyForToken)
 	if err != nil {
-		return nil, errBadPlayerToken
+		return errBadPlayerToken
 	}
 	c, ok := t.Claims.(*jwt.StandardClaims)
 	if !ok {
-		return nil, errBadPlayerToken
+		return errBadPlayerToken
 	}
 	if err = c.Valid(); err != nil {
-		return nil, errBadPlayerToken
+		return errBadPlayerToken
 	}
-
 	// Token is valid, write the validated player ID to context.
 	md[playerValidatedID] = []string{c.Subject}
-	return handler(ctx, req)
+	return nil
 }
 
 func (p *playerAuthIngress) keyForToken(t *jwt.Token) (interface{}, error) {
@@ -148,7 +169,7 @@ func (p *playerAuthIngress) keyForTime(iss int64) ([]byte, error) {
 	for retry {
 		for _, k := range p.keys {
 			retry = false
-			if iss > k.GetNotBefore() {
+			if iss >= k.GetNotBefore() {
 				if iss > k.GetNotAfter() {
 					if !retried {
 						retry = true

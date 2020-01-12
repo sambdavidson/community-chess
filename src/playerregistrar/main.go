@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 
+	"github.com/sambdavidson/community-chess/src/lib/debug"
 	"github.com/sambdavidson/community-chess/src/playerregistrar/server"
 
 	pb "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
@@ -22,7 +23,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(
+			middleware.ChainUnaryServer(
+				debug.UnaryServerInterceptor,
+			),
+		),
+	)
 	svr, err := server.New(&server.Opts{})
 	if err != nil {
 		log.Fatal(err)

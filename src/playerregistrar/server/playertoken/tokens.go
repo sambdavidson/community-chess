@@ -68,6 +68,9 @@ func (i *Issuer) NewKey() error {
 	priv := timedKey{
 		key:       pk,
 		notBefore: now,
+
+		// TODO: investigate if this is a good idea for now.
+		notAfter: time.Unix(1<<63-1, 0), // Max time
 	}
 	pub, err := privateToPublic(priv)
 	if err != nil {

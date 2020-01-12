@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 
 	"google.golang.org/grpc/metadata"
 
@@ -200,11 +200,12 @@ func TestIngressUnaryInterceptor(t *testing.T) {
 				},
 				keys: tc.initHistory,
 			}
+			interceptor := ing.GetUnaryServerInterceptor(Reject)
 			ctx := metadata.NewIncomingContext(context.TODO(), metadata.MD{
 				playerTokenKey: []string{tc.jwt},
 			})
 			//	TokenValidationUnaryServerInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error)
-			_, gotErr := ing.TokenValidationUnaryServerInterceptor(ctx,
+			_, gotErr := interceptor(ctx,
 				/* req */ nil,
 				/* info */ nil,
 				/* handler */ func(ctx context.Context, req interface{}) (interface{}, error) {
