@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/sambdavidson/community-chess/src/lib/auth"
+	"github.com/sambdavidson/community-chess/src/lib/auth/grpcplayertokens"
 
 	"github.com/sambdavidson/community-chess/src/proto/messages"
 	pb "github.com/sambdavidson/community-chess/src/proto/services/games/server"
@@ -63,7 +63,7 @@ func (s *GameServer) History(ctx context.Context, in *pb.HistoryRequest) (*pb.Hi
 
 // Join joins this game.
 func (s *GameServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResponse, error) {
-	pid, err := auth.PlayerIDFromIncomingContext(ctx)
+	pid, err := grpcplayertokens.ValidatedPlayerIDFromIncomingContext(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "missing player id from incoming context")
 	}

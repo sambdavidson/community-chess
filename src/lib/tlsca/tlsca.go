@@ -33,17 +33,17 @@ var (
 	ca         *x509.Certificate
 )
 
-// Initializes the CA if it doesn't already exist.
-func init() {
-	log.Println("Initializing TLS CA library...")
-	if err := loadCAFiles(*caDirectory); err != nil {
-		log.Printf("Error loading existing CA files: %v\n", err)
-		if _, err = RekeyCA(); err != nil {
-			log.Fatalf("Unable rekey CA: %v\n", err)
-		}
+// // Initializes the CA if it doesn't already exist.
+// func init() {
+// 	log.Println("Initializing TLS CA library...")
+// 	if err := loadCAFiles(*caDirectory); err != nil {
+// 		log.Printf("Error loading existing CA files: %v\n", err)
+// 		if _, err = RekeyCA(); err != nil {
+// 			log.Fatalf("Unable rekey CA: %v\n", err)
+// 		}
 
-	}
-}
+// 	}
+// }
 
 // CAPool returns a CertPool containing all CAs to recognize for RPCs. Returns an error if something goes wrong.
 func CAPool() (*x509.CertPool, error) {

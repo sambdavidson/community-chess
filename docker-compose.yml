@@ -1,0 +1,35 @@
+version: "3.7"
+services:
+    proto:
+        build:
+            context: ./src/proto
+        image: proto:latest 
+    gosrcbase:
+        depends_on: 
+            - proto
+        build:
+            args:
+                reposrc: /github.com/sambdavidson/community-chess/src
+            context: ./src/
+            dockerfile: gosrcbase.Dockerfile
+        image: gosrcbase
+    playerregistrar:
+        depends_on:
+            - gosrcbase
+        build:
+            args:
+                reposrc: /github.com/sambdavidson/community-chess/src
+            context: ./src
+            dockerfile: playerregistrar.Dockerfile
+        image: playerregistrar:latest
+    gameserver:
+        depends_on: 
+            - gosrcbase
+        build:
+            args:
+                reposrc: /github.com/sambdavidson/community-chess/src
+            context: ./src
+            dockerfile: gameserver.Dockerfile
+        image: gameserver:latest
+
+        # TODO MOUNT THE DEV SECRETS INTO THE CONTAINERS

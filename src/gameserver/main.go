@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"text/tabwriter"
 
 	"github.com/google/uuid"
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -36,9 +37,10 @@ var (
 	slavePort  = flag.Int("slave_port", freePort(), "port the GameServerSlave service accepts connections, if enabled")
 
 	slave                  = flag.Bool("slave", false, "whether or not this server is a GameServerSlave")
-	masterAddress          = flag.String("master_address", "localhost:8090", "addres of GameServerMaster; must be set if --slave is also set")
-	playerRegistrarAddress = flag.String("player_registar_address", "localhost:8090", "address of the Player Registrar")
-	gameID                 = flag.String("game_id", uuid.New().String(), "game_id to use, TODO for now is a UUID random generated at startup")
+	masterAddress          = flag.String("master_address", "TODO:8080", "addres of GameServerMaster; must be set if --slave is also set")
+	playerRegistrarAddress = flag.String("player_registar_address", "TODO2:8080", "address of the Player Registrar")
+	gameID                 = flag.String("game_id", "", "game_id to use, TODO for now is a UUID random generated at startup")
+	instanceID             = flag.String("instance_id", uuid.New().String(), "instance_id which uniquely identifies this running gameserver instance")
 )
 
 var (
@@ -48,7 +50,6 @@ var (
 
 // State
 var (
-	instanceUUID     = uuid.New()
 	slaveController  *gameslave.Controller
 	masterController *gamemaster.Controller
 
@@ -61,17 +62,12 @@ var (
 
 func main() {
 	flag.Parse()
-	log.Printf("Instance UUID: %s", instanceUUID.String())
-
-	gameUUID, err := uuid.Parse(*gameID)
-	if err != nil {
-		log.Fatalf("gameID is not a valid UUID: %s", *gameID)
-	}
+	printConfig()
 
 	go handleSIGINT()
 
 	if *slave { // Slave
-		slaveTLS, err := gameSlaveTLSConfig(instanceUUID, gameUUID)
+		slaveTLS, err := gameSlaveTLSConfig()
 		if err != nil {
 			log.Fatalf("failed to build TLS config: %v", err)
 		}
@@ -112,7 +108,7 @@ func main() {
 		asyncServe("SlaveServer", slaveServer, *slavePort)
 
 	} else { // Master
-		masterTLS, err := gameMasterTLSConfig(instanceUUID, gameUUID)
+		masterTLS, err := gameMasterTLSConfig()
 		if err != nil {
 			log.Fatalf("failed to build TLS config: %v", err)
 		}
@@ -156,11 +152,29 @@ func main() {
 	closeConnections()
 }
 
+func printConfig() {
+	slaveOrMaster := "Master"
+	slaveOrMasterPort := *masterPort
+	if *slave {
+		slaveOrMaster = "Slave"
+		slaveOrMasterPort = *slavePort
+	}
+
+	log.Println("Starting Game Server with configuration")
+	w := &tabwriter.Writer{}
+	w.Init(log.Writer(), 0, 8, 1, '\t', 0)
+	fmt.Fprintf(w, "Slave/Master\tMain Port\t%s Port\tInstance UUID\tGame UUID\tMaster Address\tPR Address\n", slaveOrMaster)
+	fmt.Fprintf(w, "%s\t%d\t%d\t%s\t%s\t%s\t%s\n", slaveOrMaster, *gamePort, slaveOrMasterPort, *instanceID, *gameID, *masterAddress, *playerRegistrarAddress)
+	fmt.Fprintln(w)
+	w.Flush()
+}
+
 func asyncServe(name string, server *grpc.Server, port int) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Printf("%s failed to listen: %v\n", name, err)
 		closeConnections()
+		return
 	}
 
 	log.Printf("%s serving on port %d\n", name, lis.Addr().(*net.TCPAddr).Port)

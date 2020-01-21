@@ -10,12 +10,13 @@ import (
 	"github.com/sambdavidson/community-chess/src/lib/debug"
 	"github.com/sambdavidson/community-chess/src/playerregistrar/server"
 
+	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	pb "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 	"google.golang.org/grpc"
 )
 
 var (
-	port = flag.Int("port", 50052, "port the Game Server is accepts connections")
+	port = flag.Int("port", 8080, "port the Game Server is accepts connections")
 )
 
 func main() {
