@@ -55,7 +55,7 @@ func (s *Server) RegisterPlayer(ctx context.Context, in *pb.RegisterPlayerReques
 	}
 	count := s.usernameCounts[in.GetUsername()] + 1
 	if count > 9999 {
-		return nil, status.Error(codes.ResourceExhausted, "Usename all used up.")
+		return nil, status.Error(codes.ResourceExhausted, "Username all used up.")
 	}
 	s.usernameCounts[in.GetUsername()] = count
 

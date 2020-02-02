@@ -22,7 +22,15 @@ services:
             context: ./src
             dockerfile: playerregistrar.Dockerfile
         image: playerregistrar:latest
-    gameserver:
+        secrets:
+            - ca_cert.pem
+            - pr_cert.pem
+            - pr_pk.pem
+        command: >
+            ./playerregistrar
+            --port=8080
+            --debug
+    gameserver_base:
         depends_on: 
             - gosrcbase
         build:
@@ -30,6 +38,58 @@ services:
                 reposrc: /github.com/sambdavidson/community-chess/src
             context: ./src
             dockerfile: gameserver.Dockerfile
-        image: gameserver:latest
-
-        # TODO MOUNT THE DEV SECRETS INTO THE CONTAINERS
+        image: gameserver_base:latest
+    gameserver_master:
+        depends_on:
+            - gameserver_base
+        image: gameserver_base:latest
+        secrets:
+            - ca_cert.pem
+            - gameserver_master_cert.pem
+            - gameserver_master_pk.pem
+        command: >
+            ./gameserver
+            --slave=false
+            --game_port=8080
+            --master_port=8090
+            --player_registar_address=playerregistrar:8080
+            --game_id=88888888-4444-2222-1111-000000000000
+            --ca_bundle_path=/run/secrets/ca_cert.pem
+            --master_cert_path=/run/secrets/gameserver_master_cert.pem
+            --master_private_key_path=/run/secrets/gameserver_master_pk.pem
+            --debug
+    gameserver_slave:
+        depends_on: 
+            - gameserver_base
+        image: gameserver_base:latest
+        secrets:
+            - ca_cert.pem
+            - gameserver_slave_cert.pem
+            - gameserver_slave_pk.pem
+        command: >
+            ./gameserver
+            --slave=true
+            --game_port=8080
+            --slave_port=8070
+            --master_address=community-chess_gameserver_master_1:8090
+            --player_registar_address=playerregistrar:8080
+            --game_id=88888888-4444-2222-1111-000000000000
+            --ca_bundle_path=/run/secrets/ca_cert.pem
+            --slave_cert_path=/run/secrets/gameserver_slave_cert.pem
+            --slave_private_key_path=/run/secrets/gameserver_slave_pk.pem
+            --debug   
+secrets:
+    ca_cert.pem:
+        file: ./devsecrets/certs/ca_cert.pem
+    pr_cert.pem:
+        file: ./devsecrets/certs/playerregistrar/pr_cert.pem
+    pr_pk.pem:
+        file: ./devsecrets/certs/playerregistrar/pr_pk.pem
+    gameserver_master_cert.pem:
+        file: ./devsecrets/certs/gameserver/master/master_cert.pem
+    gameserver_master_pk.pem:
+        file: ./devsecrets/certs/gameserver/master/master_pk.pem
+    gameserver_slave_cert.pem:
+        file: ./devsecrets/certs/gameserver/slave/slave_cert.pem
+    gameserver_slave_pk.pem:
+        file: ./devsecrets/certs/gameserver/slave/slave_pk.pem

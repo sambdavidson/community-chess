@@ -26,7 +26,6 @@ var (
 	secretDir   = flag.String("secret_dir", "certs", "directory to write dev secrets. Defaults to empty (the parent dir of devscrets)")
 	instanceID  = flag.String("instance_id", uuid.New().String(), "instance ID to be used in the TLS certificate")
 	gameID      = flag.String("game_id", "", "game ID to be used in the TLS certificate")
-	slave       = flag.Bool("slave", false, "if this is a slave, only used if service_type is gameserver")
 	serviceType = flag.String("service_type", "", "type of client we are generating a cert for, must be one of the consts")
 )
 
@@ -39,9 +38,9 @@ var (
 */
 
 const (
-	caPrefix   = "devCA"
-	certSuffix = "Cert.pem"
-	pkSuffix   = "PrivateKey.pem"
+	caPrefix   = "ca"
+	certSuffix = "cert.pem"
+	pkSuffix   = "pk.pem"
 )
 
 var (
@@ -55,12 +54,12 @@ func main() {
 	var cert *x509.Certificate
 	var prefix string
 	switch strings.ToLower(*serviceType) {
-	case "gameserver":
+	case "gameserver/master":
 		prefix = "master"
-		if *slave {
-			prefix = "slave"
-		}
-		cert = certForGameserver()
+		cert = certForGameserver(false)
+	case "gameserver/slave":
+		prefix = "slave"
+		cert = certForGameserver(true)
 	case "playerregistrar":
 		prefix = "pr"
 		cert = certForPlayerregistrar()
@@ -89,14 +88,17 @@ func main() {
 	}
 }
 
-func certForGameserver() *x509.Certificate {
+func certForGameserver(slave bool) *x509.Certificate {
 	if len(*gameID) == 0 {
 		log.Fatal("Missing game_id flag for gameserver")
 	}
 	serverType := GameMaster
-	if *slave {
+	dockerName := "community-chess_gameserver_master_1"
+	if slave {
 		serverType = GameSlave
+		dockerName = "community-chess_gameserver_slave_1"
 	}
+
 	return &x509.Certificate{
 		Subject: pkix.Name{
 			CommonName: *instanceID,
@@ -104,6 +106,7 @@ func certForGameserver() *x509.Certificate {
 		SerialNumber: big.NewInt(time.Now().Unix()),
 		DNSNames: []string{
 			"localhost", // The address of services will need to be figured out and injected here.
+			dockerName,
 			*gameID,
 			serverType.String(),
 			GameServer.String(),
@@ -150,7 +153,7 @@ func init() {
 
 // CAPool returns a CertPool containing all CAs to recognize for RPCs. Returns an error if something goes wrong.
 func CAPool() (*x509.CertPool, error) {
-	caCertBytesPEM, err := ioutil.ReadFile(filepath.Join(*secretDir, caPrefix+certSuffix))
+	caCertBytesPEM, err := ioutil.ReadFile(filepath.Join(*secretDir, caPrefix+"_"+certSuffix))
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +230,7 @@ func RekeyCA() ([]byte, error) {
 }
 
 func loadCAFiles(dir string) error {
-	caCertBytesPEM, err := ioutil.ReadFile(filepath.Join(dir, caPrefix+certSuffix))
+	caCertBytesPEM, err := ioutil.ReadFile(filepath.Join(dir, caPrefix+"_"+certSuffix))
 	if err != nil {
 		return err
 	}
@@ -237,7 +240,7 @@ func loadCAFiles(dir string) error {
 		return err
 	}
 
-	caPrivateKeyPEM, err := ioutil.ReadFile(filepath.Join(dir, caPrefix+pkSuffix))
+	caPrivateKeyPEM, err := ioutil.ReadFile(filepath.Join(dir, caPrefix+"_"+pkSuffix))
 	if err != nil {
 		return err
 	}
@@ -261,10 +264,10 @@ func writeToDisk(dir, prefix string, cert, pk []byte) error {
 		return fmt.Errorf("path is not a directory: %s", *secretDir)
 	}
 	log.Printf("Writing CA cert and private key to directory: %s\n", *secretDir)
-	if err = ioutil.WriteFile(filepath.Join(*secretDir, dir, prefix+certSuffix), cert, 0777); err != nil {
+	if err = ioutil.WriteFile(filepath.Join(*secretDir, dir, prefix+"_"+certSuffix), cert, 0777); err != nil {
 		return err
 	}
-	if err = ioutil.WriteFile(filepath.Join(*secretDir, dir, prefix+pkSuffix), pk, 0777); err != nil {
+	if err = ioutil.WriteFile(filepath.Join(*secretDir, dir, prefix+"_"+pkSuffix), pk, 0777); err != nil {
 		return err
 	}
 

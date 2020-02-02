@@ -37,7 +37,7 @@ var (
 	slavePort  = flag.Int("slave_port", freePort(), "port the GameServerSlave service accepts connections, if enabled")
 
 	slave                  = flag.Bool("slave", false, "whether or not this server is a GameServerSlave")
-	masterAddress          = flag.String("master_address", "TODO:8080", "addres of GameServerMaster; must be set if --slave is also set")
+	masterAddress          = flag.String("master_address", "", "addres of GameServerMaster; must be set if --slave is also set")
 	playerRegistrarAddress = flag.String("player_registar_address", "TODO2:8080", "address of the Player Registrar")
 	gameID                 = flag.String("game_id", "", "game_id to use, TODO for now is a UUID random generated at startup")
 	instanceID             = flag.String("instance_id", uuid.New().String(), "instance_id which uniquely identifies this running gameserver instance")
@@ -69,12 +69,12 @@ func main() {
 	if *slave { // Slave
 		slaveTLS, err := gameSlaveTLSConfig()
 		if err != nil {
-			log.Fatalf("failed to build TLS config: %v", err)
+			log.Fatalf("failed to build slave TLS config: %v", err)
 		}
 		slaveController, err = gameslave.NewGameSlaveController(gameslave.Opts{
 			GameID:                 *gameID,
 			PlayerRegistrarAddress: *playerRegistrarAddress,
-			SlaveAddress:           fmt.Sprintf("localhost:%d", *slavePort), // TODO figure this out
+			SlaveAddress:           slaveAddress(),
 			MasterAddress:          *masterAddress,
 			SlaveTLSConfig:         slaveTLS,
 		})
@@ -110,7 +110,7 @@ func main() {
 	} else { // Master
 		masterTLS, err := gameMasterTLSConfig()
 		if err != nil {
-			log.Fatalf("failed to build TLS config: %v", err)
+			log.Fatalf("failed to build master TLS config: %v", err)
 		}
 		masterController, err = gamemaster.NewGameMasterController(gamemaster.Opts{
 			GameID:                 *gameID,
@@ -238,4 +238,14 @@ func freePort() int {
 	}
 	temporaryListeners = append(temporaryListeners, ln)
 	return ln.Addr().(*net.TCPAddr).Port
+}
+
+// Returns the host address + slave port and tries to use the environement
+// variable HOSTNAME, if not defaults to localhost.
+func slaveAddress() string {
+	hostname, ok := os.LookupEnv("HOSTNAME")
+	if !ok {
+		hostname = "localhost"
+	}
+	return fmt.Sprintf("%s:%d", hostname, *slavePort)
 }
