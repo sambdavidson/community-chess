@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
 
 	"github.com/sambdavidson/community-chess/src/lib/debug"
 	"github.com/sambdavidson/community-chess/src/playerregistrar/server"
@@ -34,13 +35,20 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	config, err := tlsConfig()
+	// config, err := tlsConfig()
+	// if err != nil {
+	// 	log.Fatalf("failed to build tls config: %v", err)
+	// }
+	log.Println("testvfoo", *tlsCertPath, *tlsPKPath)
+	log.Println(os.Getwd())
+	creds, err := credentials.NewServerTLSFromFile(*tlsCertPath, *tlsPKPath)
 	if err != nil {
-		log.Fatalf("failed to build tls config: %v", err)
+		log.Fatalf("failed to create credentials: %v", err)
 	}
 
 	s := grpc.NewServer(
-		grpc.Creds(credentials.NewTLS(config)),
+		//grpc.Creds(credentials.NewTLS(config)),
+		grpc.Creds(creds),
 		grpc.UnaryInterceptor(
 			middleware.ChainUnaryServer(
 				debug.UnaryServerInterceptor,
@@ -76,8 +84,9 @@ func tlsConfig() (*tls.Config, error) {
 
 	return &tls.Config{
 		Certificates: []tls.Certificate{cert},
-		ClientAuth:   tls.RequireAndVerifyClientCert,
-		RootCAs:      caPool,
-		ClientCAs:    caPool,
+
+		ClientAuth: tls.RequireAndVerifyClientCert,
+		RootCAs:    caPool,
+		ClientCAs:  caPool,
 	}, nil
 }

@@ -63,6 +63,9 @@ func main() {
 	case "playerregistrar":
 		prefix = "pr"
 		cert = certForPlayerregistrar()
+	case "debugadmin":
+		prefix = "debug"
+		cert = certForDebugAdmin()
 	default:
 		log.Fatalf("invalid service_type selection: %s\n", *serviceType)
 	}
@@ -129,6 +132,25 @@ func certForPlayerregistrar() *x509.Certificate {
 		DNSNames: []string{
 			"localhost", // The address of services will need to be figured out and injected here.
 			PlayerRegistrar.String(),
+			Internal.String(),
+		},
+		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+		NotBefore:   time.Now(),
+		NotAfter:    time.Now().AddDate(10, 0, 0),
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		KeyUsage:    x509.KeyUsageDigitalSignature,
+	}
+}
+
+func certForDebugAdmin() *x509.Certificate {
+	return &x509.Certificate{
+		Subject: pkix.Name{
+			CommonName: "admin",
+		},
+		SerialNumber: big.NewInt(time.Now().Unix()),
+		DNSNames: []string{
+			"localhost", // The address of services will need to be figured out and injected here.
+			Admin.String(),
 			Internal.String(),
 		},
 		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},

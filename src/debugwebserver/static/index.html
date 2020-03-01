@@ -1,0 +1,31 @@
+  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="cc.js"></script>
+</head>
+<body>
+    <h1>Community Chess Debug Console</h1>
+    <h2>Players</h2>
+    <form id="player-registrar-connect-form">
+        <div>
+            <input id="pr-connect-address" type="text" name="pr-connect-address" placeholder="Player Registrar Address" value="localhost:8081">
+            <button>Connect To Player Registrar</button>
+        </div>
+        <pre class="output"></pre>
+    </form>
+    <form id="player-registrar-connection-status-form">
+        <div>
+            <button>Get Player Registrar Connection Status</button>
+        </div>
+        <pre class="output"></pre>
+    </form>
+    <form id="create-player-form">
+        <div>
+            <input id="create-player-username" type="text" name="create-player-username" placeholder="Username">
+            <button>Create Player</button>
+        </div>
+        <pre class="output"></pre>
+    </form>
+</body>
+</html>
