@@ -1,4 +1,4 @@
-package main
+package tlsconsts
 
 // Organization of Community Chessa
 func Organization() []string {

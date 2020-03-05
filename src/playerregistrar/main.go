@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"os"
 
 	"github.com/sambdavidson/community-chess/src/lib/debug"
 	"github.com/sambdavidson/community-chess/src/playerregistrar/server"
@@ -30,25 +29,25 @@ var (
 func main() {
 	flag.Parse()
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", *port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	// config, err := tlsConfig()
-	// if err != nil {
-	// 	log.Fatalf("failed to build tls config: %v", err)
-	// }
-	log.Println("testvfoo", *tlsCertPath, *tlsPKPath)
-	log.Println(os.Getwd())
-	creds, err := credentials.NewServerTLSFromFile(*tlsCertPath, *tlsPKPath)
+	config, err := tlsConfig()
 	if err != nil {
-		log.Fatalf("failed to create credentials: %v", err)
+		log.Fatalf("failed to build tls config: %v", err)
 	}
+	// log.Println("testvfoo", *tlsCertPath, *tlsPKPath)
+	// log.Println(os.Getwd())
+	// creds, err := credentials.NewServerTLSFromFile(*tlsCertPath, *tlsPKPath)
+	// if err != nil {
+	// 	log.Fatalf("failed to create credentials: %v", err)
+	// }
 
 	s := grpc.NewServer(
-		//grpc.Creds(credentials.NewTLS(config)),
-		grpc.Creds(creds),
+		grpc.Creds(credentials.NewTLS(config)),
+		//grpc.Creds(creds),
 		grpc.UnaryInterceptor(
 			middleware.ChainUnaryServer(
 				debug.UnaryServerInterceptor,
@@ -81,12 +80,10 @@ func tlsConfig() (*tls.Config, error) {
 	if ok := caPool.AppendCertsFromPEM(caPEM); !ok {
 		return nil, fmt.Errorf("appending CA cert to cert pool not ok")
 	}
-
 	return &tls.Config{
 		Certificates: []tls.Certificate{cert},
-
-		ClientAuth: tls.RequireAndVerifyClientCert,
-		RootCAs:    caPool,
-		ClientCAs:  caPool,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		RootCAs:      caPool,
+		ClientCAs:    caPool,
 	}, nil
 }

@@ -7,5 +7,5 @@ RUN cd ./playerregistrar && go build .
 FROM alpine:latest
 ARG reposrc
 COPY --from=builder /go/src/${reposrc}/playerregistrar/playerregistrar .
-EXPOSE 8080
-CMD ["./playerregistrar"]
+EXPOSE 8081
+CMD ["./playerregistrar", "--help"]

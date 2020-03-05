@@ -5,10 +5,12 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 )
 
 // Handler handles player operation HTTP stuff.
@@ -42,7 +44,13 @@ func (h *Handler) connect(rw http.ResponseWriter, req *http.Request) {
 		conn.Close()
 	}
 	var err error
-	conn, err = grpc.Dial(req.FormValue("pr-connect-address"), grpc.WithTransportCredentials(credentials.NewTLS(h.TLS)))
+	conn, err = grpc.Dial(req.FormValue("pr-connect-address"),
+		grpc.WithTransportCredentials(credentials.NewTLS(h.TLS)),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			PermitWithoutStream: true,
+			Time:                time.Hour,
+			Timeout:             10 * time.Second,
+		}))
 	if err != nil {
 		rw.WriteHeader(400)
 		json.NewEncoder(rw).Encode(err)

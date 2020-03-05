@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/sambdavidson/community-chess/src/lib/auth"
-	"github.com/sambdavidson/community-chess/src/lib/tlsca"
+	"github.com/sambdavidson/community-chess/src/lib/tlsconsts"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -18,7 +18,7 @@ func MasterAuthUnaryServerInterceptor(ctx context.Context, req interface{}, info
 	}
 
 	for _, san := range x509Cert.DNSNames {
-		if san == tlsca.Internal.String() {
+		if san == tlsconsts.Internal.String() {
 			return handler(ctx, req)
 		}
 	}

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sambdavidson/community-chess/src/lib/tlsconsts"
 )
 
 var (
@@ -95,10 +96,10 @@ func certForGameserver(slave bool) *x509.Certificate {
 	if len(*gameID) == 0 {
 		log.Fatal("Missing game_id flag for gameserver")
 	}
-	serverType := GameMaster
+	serverType := tlsconsts.GameMaster
 	dockerName := "community-chess_gameserver_master_1"
 	if slave {
-		serverType = GameSlave
+		serverType = tlsconsts.GameSlave
 		dockerName = "community-chess_gameserver_slave_1"
 	}
 
@@ -112,8 +113,8 @@ func certForGameserver(slave bool) *x509.Certificate {
 			dockerName,
 			*gameID,
 			serverType.String(),
-			GameServer.String(),
-			Internal.String(),
+			tlsconsts.GameServer.String(),
+			tlsconsts.Internal.String(),
 		},
 		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
 		NotBefore:   time.Now(),
@@ -131,8 +132,8 @@ func certForPlayerregistrar() *x509.Certificate {
 		SerialNumber: big.NewInt(time.Now().Unix()),
 		DNSNames: []string{
 			"localhost", // The address of services will need to be figured out and injected here.
-			PlayerRegistrar.String(),
-			Internal.String(),
+			tlsconsts.PlayerRegistrar.String(),
+			tlsconsts.Internal.String(),
 		},
 		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
 		NotBefore:   time.Now(),
@@ -150,8 +151,8 @@ func certForDebugAdmin() *x509.Certificate {
 		SerialNumber: big.NewInt(time.Now().Unix()),
 		DNSNames: []string{
 			"localhost", // The address of services will need to be figured out and injected here.
-			Admin.String(),
-			Internal.String(),
+			tlsconsts.Admin.String(),
+			tlsconsts.Internal.String(),
 		},
 		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
 		NotBefore:   time.Now(),
@@ -208,12 +209,12 @@ func RekeyCA() ([]byte, error) {
 	newCa := &x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().Unix()),
 		Subject: pkix.Name{
-			Organization:  Organization(),
-			Country:       Country(),
-			Province:      Province(),
-			Locality:      Locality(),
-			StreetAddress: StreetAddress(),
-			PostalCode:    PostalCode(),
+			Organization:  tlsconsts.Organization(),
+			Country:       tlsconsts.Country(),
+			Province:      tlsconsts.Province(),
+			Locality:      tlsconsts.Locality(),
+			StreetAddress: tlsconsts.StreetAddress(),
+			PostalCode:    tlsconsts.PostalCode(),
 		},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().AddDate(10, 0, 0),

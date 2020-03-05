@@ -12,7 +12,7 @@ import (
 	"github.com/sambdavidson/community-chess/src/proto/messages"
 
 	"github.com/sambdavidson/community-chess/src/lib/auth"
-	"github.com/sambdavidson/community-chess/src/lib/tlsca"
+	"github.com/sambdavidson/community-chess/src/lib/tlsconsts"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -135,7 +135,7 @@ func validateSlave(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", status.Errorf(codes.Unauthenticated, "could not get x509 from context: %v", err)
 	}
-	if !contains(x509Cert.DNSNames, string(tlsca.GameSlave)) {
+	if !contains(x509Cert.DNSNames, string(tlsconsts.GameSlave)) {
 		return "", status.Error(codes.Unauthenticated, "peer is not a slave")
 	}
 	if !contains(x509Cert.DNSNames, gameID) {

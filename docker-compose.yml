@@ -1,27 +1,16 @@
 version: "3.7"
 services:
-    proto:
-        build:
-            context: ./src/proto
-        image: proto:latest 
-    gosrcbase:
-        depends_on: 
-            - proto
-        build:
-            args:
-                reposrc: /github.com/sambdavidson/community-chess/src
-            context: ./src/
-            dockerfile: gosrcbase.Dockerfile
-        image: gosrcbase
     playerregistrar:
-        depends_on:
-            - gosrcbase
         build:
             args:
-                reposrc: /github.com/sambdavidson/community-chess/src
+                REPOSRC: /github.com/sambdavidson/community-chess/src
             context: ./src
             dockerfile: playerregistrar.Dockerfile
         image: playerregistrar:latest
+        networks:
+            internal:
+                aliases:
+                    - playerregistrar
         secrets:
             - ca_cert.pem
             - pr_cert.pem
@@ -33,19 +22,17 @@ services:
             --tls_cert_path=/run/secrets/pr_cert.pem
             --tls_private_key_path=/run/secrets/pr_pk.pem
             --debug
-    gameserver_base:
-        depends_on: 
-            - gosrcbase
+    gameserver_master:
         build:
             args:
-                reposrc: /github.com/sambdavidson/community-chess/src
+                REPOSRC: /github.com/sambdavidson/community-chess/src
             context: ./src
             dockerfile: gameserver.Dockerfile
-        image: gameserver_base:latest
-    gameserver_master:
-        depends_on:
-            - gameserver_base
-        image: gameserver_base:latest
+        image: gameserver:latest
+        networks:
+            internal:
+                aliases:
+                    - gameserver_master
         secrets:
             - ca_cert.pem
             - gameserver_master_cert.pem
@@ -62,9 +49,16 @@ services:
             --master_private_key_path=/run/secrets/gameserver_master_pk.pem
             --debug
     gameserver_slave:
-        depends_on: 
-            - gameserver_base
-        image: gameserver_base:latest
+        build:
+            args:
+                REPOSRC: /github.com/sambdavidson/community-chess/src
+            context: ./src
+            dockerfile: gameserver.Dockerfile
+        image: gameserver:latest
+        networks:
+            internal:
+                aliases:
+                    - gameserver_slave
         secrets:
             - ca_cert.pem
             - gameserver_slave_cert.pem
@@ -80,7 +74,35 @@ services:
             --ca_bundle_path=/run/secrets/ca_cert.pem
             --slave_cert_path=/run/secrets/gameserver_slave_cert.pem
             --slave_private_key_path=/run/secrets/gameserver_slave_pk.pem
-            --debug   
+            --debug 
+    debugwebserver:
+        build:
+            args:
+                REPOSRC: /github.com/sambdavidson/community-chess/src
+            context: ./src
+            dockerfile: debugwebserver.Dockerfile
+        image: debugwebserver:latest
+        expose:
+            - "80"
+        ports: 
+            - "8080:80"
+        networks:
+            internal:
+                aliases:
+                    - debugwebserver
+        secrets:
+            - ca_cert.pem
+            - debug_cert.pem
+            - debug_pk.pem
+        command: >
+            ./debugwebserver
+            --port=80
+            --static_dir=./static
+            --ca_bundle_path=/run/secrets/ca_cert.pem
+            --tls_cert_path=/run/secrets/debug_cert.pem
+            --tls_private_key_path=/run/secrets/debug_pk.pem
+networks:
+    internal:  
 secrets:
     ca_cert.pem:
         file: ./devsecrets/certs/ca_cert.pem
@@ -88,6 +110,10 @@ secrets:
         file: ./devsecrets/certs/playerregistrar/pr_cert.pem
     pr_pk.pem:
         file: ./devsecrets/certs/playerregistrar/pr_pk.pem
+    debug_cert.pem:
+        file: ./devsecrets/certs/debugadmin/debug_cert.pem
+    debug_pk.pem:
+        file: ./devsecrets/certs/debugadmin/debug_pk.pem
     gameserver_master_cert.pem:
         file: ./devsecrets/certs/gameserver/master/master_cert.pem
     gameserver_master_pk.pem:

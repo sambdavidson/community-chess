@@ -170,7 +170,7 @@ func printConfig() {
 }
 
 func asyncServe(name string, server *grpc.Server, port int) {
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
 	if err != nil {
 		log.Printf("%s failed to listen: %v\n", name, err)
 		closeConnections()
