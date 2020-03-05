@@ -1,0 +1,19 @@
+h2 button {
+    font-size: x-large;
+}
+
+#players {
+    background-color: #aaffaa;
+    padding: 8px;
+}
+#pr-connect-address {
+    width: 400px;
+}
+#login-number-suffix {
+    width: 30px;
+}
+
+#gameserver {
+    background-color: #aaaaff;
+    padding: 8px;
+}

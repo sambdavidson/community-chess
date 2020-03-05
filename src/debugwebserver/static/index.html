@@ -2,30 +2,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" type="text/css" href="cc.css">
     <script src="cc.js"></script>
 </head>
 <body>
     <h1>Community Chess Debug Console</h1>
-    <h2>Players</h2>
-    <form id="player-registrar-connect-form">
-        <div>
-            <input id="pr-connect-address" type="text" name="pr-connect-address" placeholder="Player Registrar Address" value="localhost:8081">
-            <button>Connect To Player Registrar</button>
+    <h2><button onclick="setVisible('players');">Players</button> <button onclick="setVisible('gameserver');">GameServer</button></h2>
+    <div id="sections">
+        <div id="players">
+            <form id="player-registrar-connect-form">
+                <div>
+                    <input id="pr-connect-address" type="text" name="pr-connect-address" placeholder="Player Registrar Address" value="playerregistrar:443">
+                    <button>Connect To Player Registrar</button>
+                </div>
+                <pre class="output"></pre>
+            </form>
+            <form id="player-registrar-connection-status-form">
+                <div>
+                    <button>Get Player Registrar Connection Status</button>
+                </div>
+                <pre class="output"></pre>
+            </form>
+            <form id="create-player-form">
+                <div>
+                    <input id="create-player-username" type="text" name="create-player-username" placeholder="Username">
+                    <button>Create Player</button>
+                </div>
+                <pre class="output"></pre>
+            </form>
+            <form id="get-player-form">
+                <div>
+                    <label for="get-player-known-player-dropdown">buggy, use arrow keys</label>
+                    <select id="get-player-known-player-dropdown" type="text" name="known-player">
+                        <option value="">--SELECT LOCALLY KNOWN PLAYERS--</option>
+                    </select>
+                    <input id="get-player-uuid" type="text" name="get-player-uuid" placeholder="Player UUID">
+                    <button>Get Player</button>
+                </div>
+                <pre class="output"></pre>
+            </form>
+            <form id="login-form">
+                <div>
+                    <input id="login-username" type="text" name="login-username" placeholder="Player Username">
+                    <input id="login-number-suffix" type="number" name="login-number-suffix" placeholder="Player NumberSuffix">
+                    <button>Login</button>
+                </div>
+                <pre class="output"></pre>
+            </form>
         </div>
-        <pre class="output"></pre>
-    </form>
-    <form id="player-registrar-connection-status-form">
-        <div>
-            <button>Get Player Registrar Connection Status</button>
+        <!-- Add more sections below here. -->
+        <div id="gameserver">
+            Foo
         </div>
-        <pre class="output"></pre>
-    </form>
-    <form id="create-player-form">
-        <div>
-            <input id="create-player-username" type="text" name="create-player-username" placeholder="Username">
-            <button>Create Player</button>
-        </div>
-        <pre class="output"></pre>
-    </form>
+    </div>
 </body>
 </html>

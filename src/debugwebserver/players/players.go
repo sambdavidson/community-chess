@@ -1,10 +1,13 @@
+// Package players translates HTTP requests to playerregistar requests.
 package players
 
 import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
@@ -34,8 +37,12 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		h.connectionStatus(rw, req)
 	case "create":
 		h.create(rw, req)
+	case "get":
+		h.get(rw, req)
+	case "login":
+		h.login(rw, req)
 	default:
-		rw.WriteHeader(404)
+		rw.WriteHeader(http.StatusNotFound)
 	}
 }
 
@@ -52,11 +59,11 @@ func (h *Handler) connect(rw http.ResponseWriter, req *http.Request) {
 			Timeout:             10 * time.Second,
 		}))
 	if err != nil {
-		rw.WriteHeader(400)
+		rw.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(rw).Encode(err)
 		return
 	}
-	rw.WriteHeader(200)
+	rw.WriteHeader(http.StatusOK)
 	json.NewEncoder(rw).Encode(struct {
 		Target string
 		State  string
@@ -71,7 +78,7 @@ func (h *Handler) connectionStatus(rw http.ResponseWriter, req *http.Request) {
 		target = conn.Target()
 		state = conn.GetState().String()
 	}
-	rw.WriteHeader(200)
+	rw.WriteHeader(http.StatusOK)
 	json.NewEncoder(rw).Encode(struct {
 		Target string
 		State  string
@@ -79,19 +86,66 @@ func (h *Handler) connectionStatus(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (h *Handler) create(rw http.ResponseWriter, req *http.Request) {
-	ctx := context.Background()
 	if prc == nil {
-		rw.WriteHeader(503)
+		rw.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintln(rw, "Not not connected to playerregistrar service.")
 		return
 	}
-	res, err := prc.RegisterPlayer(ctx, &pr.RegisterPlayerRequest{
+	res, err := prc.RegisterPlayer(context.Background(), &pr.RegisterPlayerRequest{
 		Username: req.FormValue("create-player-username"),
 	})
 	if err != nil {
-		rw.WriteHeader(400)
+		rw.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(rw).Encode(err)
 		return
 	}
-	rw.WriteHeader(200)
+	rw.WriteHeader(http.StatusOK)
+	json.NewEncoder(rw).Encode(res)
+}
+
+func (h *Handler) get(rw http.ResponseWriter, req *http.Request) {
+	if prc == nil {
+		rw.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintln(rw, "Not not connected to playerregistrar service.")
+		return
+	}
+	pid := req.FormValue("get-player-uuid")
+	if pid == "" {
+		pid = req.FormValue("get-player-known-player-dropdown")
+	}
+	res, err := prc.GetPlayer(context.Background(), &pr.GetPlayerRequest{
+		PlayerId: pid,
+	})
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(err)
+		return
+	}
+	rw.WriteHeader(http.StatusOK)
+	json.NewEncoder(rw).Encode(res)
+}
+
+func (h *Handler) login(rw http.ResponseWriter, req *http.Request) {
+	if prc == nil {
+		rw.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprintln(rw, "Not not connected to playerregistrar service.")
+		return
+	}
+	suffix, err := strconv.Atoi(req.FormValue("login-number-suffix"))
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(err)
+		return
+	}
+	res, err := prc.Login(context.Background(), &pr.LoginRequest{
+		Username:     req.FormValue("login-username"),
+		NumberSuffix: int32(suffix),
+	})
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(err)
+		return
+	}
+	rw.WriteHeader(http.StatusOK)
 	json.NewEncoder(rw).Encode(res)
 }

@@ -17,7 +17,7 @@ services:
             - pr_pk.pem
         command: >
             ./playerregistrar
-            --port=8080
+            --port=443
             --ca_bundle_path=/run/secrets/ca_cert.pem
             --tls_cert_path=/run/secrets/pr_cert.pem
             --tls_private_key_path=/run/secrets/pr_pk.pem
@@ -40,8 +40,8 @@ services:
         command: >
             ./gameserver
             --slave=false
-            --game_port=8080
-            --master_port=8090
+            --game_port=443
+            --master_port=6443
             --player_registar_address=playerregistrar:8080
             --game_id=88888888-4444-2222-1111-000000000000
             --ca_bundle_path=/run/secrets/ca_cert.pem
@@ -66,8 +66,8 @@ services:
         command: >
             ./gameserver
             --slave=true
-            --game_port=8080
-            --slave_port=8070
+            --game_port=443
+            --slave_port=6443
             --master_address=community-chess_gameserver_master_1:8090
             --player_registar_address=playerregistrar:8080
             --game_id=88888888-4444-2222-1111-000000000000

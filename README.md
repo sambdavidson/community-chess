@@ -6,13 +6,22 @@
 
 Vote on chess moves with people from all over the world. Specifically this is Chess layered on a generic framework for casting asynchronous moves in a given game.
 
-## Building
+## Building and Running
 
-### Compile All Protos
+NOTE: Make sure you have Docker (and Docker Compose) installed
 
-#### In VSCode
+1. CD to root of the git repo e.g. `github.com/sambdavidson/community-chess`
 
-Press _ctrl-shift-p_ to open the command pallet. Search for and run `proto3: Compile All Protos`.
+2. Build the base protos and builder image
+```bash
+./src/rebuild_bash.sh
+```
+3. Build and run all microservices with Docker Compose
+```bash
+docker-compose up --build
+```
+
+4. Optional, connect to the debug CLI hosted at `localhost:8080` in a web browser.
 
 ## API
 

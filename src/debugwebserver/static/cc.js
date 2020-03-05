@@ -1,12 +1,27 @@
+let knownPlayers = {};
+
 document.addEventListener('DOMContentLoaded', function(){
-    formSetup('create-player-form', '/players/create');
+    /* Player Stuff */
+    formSetup('create-player-form', '/players/create', playerInfoCallback);
     formSetup('player-registrar-connect-form', '/players/connect');
     formSetup('player-registrar-connection-status-form', '/players/connectionStatus');
+    formSetup('get-player-form', '/players/get', playerInfoCallback);
+    formSetup('login-form', 'players/login', playerCredsCallback);
 
+    setVisible('players');
     console.log('JS Loaded');
 });
 
-function formSetup(formId, url) {
+function setVisible(divId) {
+    let root = document.getElementById("sections");
+    Array.from(root.children).forEach((el) => {
+        el.hidden = true;
+    });
+    let e = document.getElementById(divId);
+    e.hidden = false;
+}
+
+function formSetup(formId, url, dataCallback) {
     /** @type {HTMLFormElement} */
     let form = document.getElementById(formId);
     /** @type {HTMLPreElement} */
@@ -36,6 +51,9 @@ function formSetup(formId, url) {
         .then((response) => response.json())
         .then((data) => {
             pre.innerText = JSON.stringify(data, null, 2);
+            if (typeof dataCallback === 'function') {
+                dataCallback(data);
+            }
         })
         .catch((error) => {
             pre.innerText = JSON.stringify(error, null, 2);
@@ -44,4 +62,29 @@ function formSetup(formId, url) {
 
         return false;
     }
+}
+
+function playerInfoCallback(data) {
+    knownPlayers[data.player.id] = data.player;
+    
+    /** @type {HTMLSelectElement} */
+    let dropdown = document.getElementById('get-player-known-player-dropdown');
+    /** @type {HTMLInputElement} */
+    let input = document.getElementById('get-player-uuid');
+    dropdown.onchange = () => {
+        input.value = dropdown.value;
+    }
+    dropdown.addEventListener('click', (e) => {
+        dropdown.innerHTML = '';
+        for (const [key, value] of Object.entries(knownPlayers)) {
+            let o = document.createElement('option');
+            o.innerText = `${value.username}:${value.number_suffix}`;
+            o.value = value.id;
+            dropdown.appendChild(o);
+        }
+    })
+}
+
+function playerCredsCallback(data) {
+    console.log(data);
 }
