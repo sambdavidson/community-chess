@@ -1,4 +1,3 @@
-// Package players translates HTTP requests to playerregistar requests.
 package players
 
 import (

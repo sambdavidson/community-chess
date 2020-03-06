@@ -97,10 +97,10 @@ func certForGameserver(slave bool) *x509.Certificate {
 		log.Fatal("Missing game_id flag for gameserver")
 	}
 	serverType := tlsconsts.GameMaster
-	dockerName := "community-chess_gameserver_master_1"
+	dockerName := "gameserver_master"
 	if slave {
 		serverType = tlsconsts.GameSlave
-		dockerName = "community-chess_gameserver_slave_1"
+		dockerName = "gameserver_slave"
 	}
 
 	return &x509.Certificate{

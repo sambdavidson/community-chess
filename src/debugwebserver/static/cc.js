@@ -2,11 +2,16 @@ let knownPlayers = {};
 
 document.addEventListener('DOMContentLoaded', function(){
     /* Player Stuff */
-    formSetup('create-player-form', '/players/create', playerInfoCallback);
     formSetup('player-registrar-connect-form', '/players/connect');
     formSetup('player-registrar-connection-status-form', '/players/connectionStatus');
+    formSetup('create-player-form', '/players/create', playerInfoCallback);
     formSetup('get-player-form', '/players/get', playerInfoCallback);
     formSetup('login-form', 'players/login', playerCredsCallback);
+
+    /* Game Server stuff */
+    formSetup('gs-connect-form', '/games/connect');
+    formSetup('gs-connection-status-form', '/games/connectionStatus');
+    formSetup('gs-game-form', '/games/game');
 
     setVisible('players');
     console.log('JS Loaded');

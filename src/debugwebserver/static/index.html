@@ -12,7 +12,7 @@
         <div id="players">
             <form id="player-registrar-connect-form">
                 <div>
-                    <input id="pr-connect-address" type="text" name="pr-connect-address" placeholder="Player Registrar Address" value="playerregistrar:443">
+                    <input class="wideInput" id="pr-connect-address" type="text" name="pr-connect-address" placeholder="Player Registrar Address" value="playerregistrar:443">
                     <button>Connect To Player Registrar</button>
                 </div>
                 <pre class="output"></pre>
@@ -50,9 +50,28 @@
                 <pre class="output"></pre>
             </form>
         </div>
-        <!-- Add more sections below here. -->
         <div id="gameserver">
-            Foo
+            <form id="gs-connect-form">
+                <div>
+                    <input class="wideInput" id="gs-connect-address" type="text" name="gs-connect-address" placeholder="Game Server Address" value="gameserver_master:443">
+                    <button>Connect To Game Server</button>
+                </div>
+                <pre class="output"></pre>
+            </form>
+            <form id="gs-connection-status-form">
+                <div>
+                    <button>Get Game Server Connection Status</button>
+                </div>
+                <pre class="output"></pre>
+            </form>
+            <form id="gs-game-form">
+                <label for="gs-game-detailed">Detailed</label>
+                <input id="gs-game-detailed" name="gs-game-detailed" type="checkbox" value="false">
+                <div>
+                    <button>Get Game</button>
+                </div>
+                <pre class="output"></pre>
+            </form>
         </div>
     </div>
 </body>

@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/sambdavidson/community-chess/src/debugwebserver/gameserver"
 	"github.com/sambdavidson/community-chess/src/debugwebserver/players"
 )
 
@@ -29,6 +30,7 @@ func main() {
 
 	http.Handle("/", http.FileServer(http.Dir(*staticDir)))
 	http.Handle("/players/", http.StripPrefix("/players/", &players.Handler{TLS: tlscfg}))
+	http.Handle("/games/", http.StripPrefix("/games/", &gameserver.Handler{TLS: tlscfg}))
 
 	/* DONE! */
 	log.Printf("Starting HTTP Server on Port: 0.0.0.0:%d\n", *port)
