@@ -32,8 +32,8 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	switch req.URL.Path { // Handlers for following the /players/ prefix e.g. the /player/create URL
 	case "connect":
 		h.connect(rw, req)
-	case "connectionStatus":
-		h.connectionStatus(rw, req)
+	case "connectionstatus":
+		h.connectionstatus(rw, req)
 	case "create":
 		h.create(rw, req)
 	case "get":
@@ -70,7 +70,7 @@ func (h *Handler) connect(rw http.ResponseWriter, req *http.Request) {
 	prc = pr.NewPlayersRegistrarClient(conn)
 }
 
-func (h *Handler) connectionStatus(rw http.ResponseWriter, req *http.Request) {
+func (h *Handler) connectionstatus(rw http.ResponseWriter, req *http.Request) {
 	target := ""
 	state := "NOT CONNECTED"
 	if conn != nil {

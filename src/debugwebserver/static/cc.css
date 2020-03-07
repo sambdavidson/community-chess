@@ -10,18 +10,19 @@ pre {
     word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
 
-#players {
-    background-color: #aaffaa;
+#sections {
     padding: 8px;
 }
+
+#players {background-color: #aaffaa;}
+#gameserver {background-color: #aaaaff;}
+#gamemaster {background-color: #ffaaaa;}
+#gameslave {background-color: #ff99ff;}
+
+
 .wideInput {
     width: 400px;
 }
 #login-number-suffix {
-    width: 30px;
-}
-
-#gameserver {
-    background-color: #aaaaff;
-    padding: 8px;
+    width: 160px;
 }

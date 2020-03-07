@@ -2,12 +2,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" href="favicon.png">
     <link rel="stylesheet" type="text/css" href="cc.css">
-    <script src="cc.js"></script>
+    <script src="common.js"></script>
+    <script src="players.js"></script>
+    <script src="gamemaster.js"></script>
+    <script src="gameslave.js"></script>
+    <script src="gameserver.js"></script>
+
 </head>
 <body>
     <h1>Community Chess Debug Console</h1>
-    <h2><button onclick="setVisible('players');">Players</button> <button onclick="setVisible('gameserver');">GameServer</button></h2>
+    <h2>
+        <button onclick="setVisible('players');">Players</button>
+        <button onclick="setVisible('gameserver');">GameServer</button>
+        <button onclick="setVisible('gamemaster');">GameMaster</button>
+        <button onclick="setVisible('gameslave');">GameSlave</button>
+    </h2>
     <div id="sections">
         <div id="players">
             <form id="player-registrar-connect-form">
@@ -72,6 +83,30 @@
                 </div>
                 <pre class="output"></pre>
             </form>
+        </div>
+        <div id="gamemaster">
+            <form id="gm-connect-form">
+                <div>
+                    <input class="wideInput" id="gm-connect-address" type="text" name="gm-connect-address" placeholder="Game Master Address" value="gameserver_master:6443">
+                    <button>Connect To Game Master</button>
+                </div>
+                <pre class="output"></pre>
+            </form>
+            <form id="gm-connection-status-form">
+                <div>
+                    <button>Get Game Master Connection Status</button>
+                </div>
+                <pre class="output"></pre>
+            </form>
+            <form id="gm-initialize">
+                <div>
+                    <button>Initialize Game</button>
+                </div>
+                <pre class="output"></pre>
+            </form>
+        </div>
+        <div id="gameslave">
+            TODO Game Slave
         </div>
     </div>
 </body>

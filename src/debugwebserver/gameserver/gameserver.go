@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
-// Handler handles player operation HTTP stuff.
+// Handler handles gameserver operation HTTP stuff.
 type Handler struct {
 	TLS *tls.Config
 }
@@ -28,11 +28,11 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	req.ParseMultipartForm(100000)
 	rw.Header().Set("Content-Type", "application/json")
 
-	switch req.URL.Path { // Handlers for following the /players/ prefix e.g. the /player/create URL
+	switch req.URL.Path { // Handlers for following the /games/ prefix e.g. the /games/join URL
 	case "connect":
 		h.connect(rw, req)
-	case "connectionStatus":
-		h.connectionStatus(rw, req)
+	case "connectionstatus":
+		h.connectionstatus(rw, req)
 	case "game":
 		h.game(rw, req)
 	case "metadata":
@@ -79,7 +79,7 @@ func (h *Handler) connect(rw http.ResponseWriter, req *http.Request) {
 	gsc = gs.NewGameServerClient(conn)
 }
 
-func (h *Handler) connectionStatus(rw http.ResponseWriter, req *http.Request) {
+func (h *Handler) connectionstatus(rw http.ResponseWriter, req *http.Request) {
 	target := ""
 	state := "NOT CONNECTED"
 	if conn != nil {
