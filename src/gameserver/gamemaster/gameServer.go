@@ -3,6 +3,8 @@ package gamemaster
 import (
 	"context"
 
+	"github.com/sambdavidson/community-chess/src/lib/auth/grpcplayertokens"
+
 	"google.golang.org/grpc/codes"
 
 	"github.com/sambdavidson/community-chess/src/proto/messages"
@@ -60,12 +62,39 @@ func (s *GameServer) History(ctx context.Context, in *pb.HistoryRequest) (*pb.Hi
 
 // Join joins this game.
 func (s *GameServer) Join(ctx context.Context, in *pb.JoinRequest) (*pb.JoinResponse, error) {
-	return gameImplementation.Join(ctx, in)
+	pid, err := grpcplayertokens.ValidatedPlayerIDFromIncomingContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	_, err = gameImplementation.AddPlayers(ctx, &pb.AddPlayersRequest{
+		Players: []*pb.AddPlayersRequest_NewPlayer{
+			&pb.AddPlayersRequest_NewPlayer{
+				PlayerId: pid,
+				Request: &pb.AddPlayersRequest_NewPlayer_JoinRequest{
+					Fields: in.Fields,
+				},
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &pb.JoinResponse{}, nil
 }
 
 // Leave leaves this game.
 func (s *GameServer) Leave(ctx context.Context, in *pb.LeaveRequest) (*pb.LeaveResponse, error) {
-	return gameImplementation.Leave(ctx, in)
+	pid, err := grpcplayertokens.ValidatedPlayerIDFromIncomingContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	_, err = gameImplementation.RemovePlayers(ctx, &pb.RemovePlayersRequest{
+		PlayerIds: []string{pid},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &pb.LeaveResponse{}, nil
 }
 
 // PostVote posts a vote to this game.

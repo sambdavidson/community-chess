@@ -22,7 +22,7 @@ function setVisible(divId) {
  * 
  * @param {string} formId ID of the form element
  * @param {string} url URL to call on server
- * @param {function(any)} dataCallback callback function that will be called on 2XX response code with JSON of body.
+ * @param {function(any, FormData)} dataCallback callback function that will be called on 2XX response code with JSON of body.
  */
 function formSetup(formId, url, dataCallback) {
     /** @type {HTMLFormElement} */
@@ -55,7 +55,7 @@ function formSetup(formId, url, dataCallback) {
         .then((data) => {
             pre.innerText = JSON.stringify(data, null, 2);
             if (typeof dataCallback === 'function') {
-                dataCallback(data);
+                dataCallback(data, formData);
             }
         })
         .catch((error) => {

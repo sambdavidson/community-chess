@@ -21,8 +21,9 @@ type Handler struct {
 }
 
 var (
-	conn *grpc.ClientConn
-	prc  pr.PlayersRegistrarClient
+	conn              *grpc.ClientConn
+	prc               pr.PlayersRegistrarClient
+	errorNotConnected = fmt.Errorf("not not connected to Player Registrar service")
 )
 
 func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -87,7 +88,7 @@ func (h *Handler) connectionstatus(rw http.ResponseWriter, req *http.Request) {
 func (h *Handler) create(rw http.ResponseWriter, req *http.Request) {
 	if prc == nil {
 		rw.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintln(rw, "Not not connected to playerregistrar service.")
+		fmt.Fprintln(rw, errorNotConnected)
 		return
 	}
 	res, err := prc.RegisterPlayer(context.Background(), &pr.RegisterPlayerRequest{
@@ -105,7 +106,7 @@ func (h *Handler) create(rw http.ResponseWriter, req *http.Request) {
 func (h *Handler) get(rw http.ResponseWriter, req *http.Request) {
 	if prc == nil {
 		rw.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintln(rw, "Not not connected to playerregistrar service.")
+		fmt.Fprintln(rw, errorNotConnected)
 		return
 	}
 	pid := req.FormValue("get-player-uuid")
@@ -127,7 +128,7 @@ func (h *Handler) get(rw http.ResponseWriter, req *http.Request) {
 func (h *Handler) login(rw http.ResponseWriter, req *http.Request) {
 	if prc == nil {
 		rw.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintln(rw, "Not not connected to playerregistrar service.")
+		fmt.Fprintln(rw, errorNotConnected)
 		return
 	}
 	suffix, err := strconv.Atoi(req.FormValue("login-number-suffix"))

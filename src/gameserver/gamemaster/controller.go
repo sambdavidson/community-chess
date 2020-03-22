@@ -3,7 +3,6 @@ package gamemaster
 import (
 	"crypto/tls"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/sambdavidson/community-chess/src/proto/messages"
@@ -12,16 +11,15 @@ import (
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 // Opts contains intialization options and variables for a new GameServerMaster
 type Opts struct {
-	InstanceID             string
-	GameID                 string
-	PlayerRegistrarAddress string
-	ServerTLSConfig        *tls.Config
-	MasterTLSConfig        *tls.Config
+	InstanceID          string
+	GameID              string
+	ServerTLSConfig     *tls.Config
+	MasterTLSConfig     *tls.Config
+	PlayersRegistrarCli pr.PlayersRegistrarClient
 }
 
 // Controller owns both the GameServer and GameServerMaster and manages their game data.
@@ -30,8 +28,6 @@ type Controller struct {
 	gameServerMaster *GameServerMaster
 
 	slaveConns []*grpc.ClientConn
-
-	playerRegistrarConn *grpc.ClientConn
 }
 
 var (
@@ -52,23 +48,14 @@ func NewGameMasterController(opts Opts) (*Controller, error) {
 	instanceID = opts.InstanceID
 	gameID = opts.GameID
 	masterTLSConfig = opts.MasterTLSConfig
-
-	playerRegistrarConn, err := grpc.Dial(opts.PlayerRegistrarAddress,
-		grpc.WithTransportCredentials(credentials.NewTLS(masterTLSConfig)),
-	)
-	if err != nil {
-		log.Fatalf("failed to connect: %v", err)
-	}
-	playerRegistrarCli := pr.NewPlayersRegistrarClient(playerRegistrarConn)
 	controller = &Controller{
 		gameServer: &GameServer{
-			playersRegistrarCli: playerRegistrarCli,
+			playersRegistrarCli: opts.PlayersRegistrarCli,
 		},
 		gameServerMaster: &GameServerMaster{
-			playersRegistrarCli: playerRegistrarCli,
+			playersRegistrarCli: opts.PlayersRegistrarCli,
 			slaves:              map[string]gs.GameServerSlaveClient{},
 		},
-		playerRegistrarConn: playerRegistrarConn,
 	}
 	return controller, nil
 }
@@ -85,9 +72,6 @@ func (c *Controller) GameServerMasterInstance() *GameServerMaster {
 
 // Close all open connections
 func (c *Controller) Close() {
-	if c.playerRegistrarConn != nil {
-		c.playerRegistrarConn.Close()
-	}
 	for _, conn := range c.slaveConns {
 		conn.Close()
 	}

@@ -1,5 +1,6 @@
 var playersModule = {
     playersMap: {},
+    simpleNamesToLoginTokens: {},
 };
 
 document.addEventListener('DOMContentLoaded', function(){
@@ -34,9 +35,63 @@ function playerInfoCallback(data) {
             o.value = value.id;
             dropdown.appendChild(o);
         }
-    })
+    });
 }
 
-function playerCredsCallback(data) {
-    console.log(data);
+/**
+ * 
+ * @param {any} data 
+ * @param {FormData} formData 
+ */
+function playerCredsCallback(data, formData) {
+    if (!data || !data.token) {
+        return;
+    }
+    let simepleName = `${formData.get('login-username')}:${formData.get('login-number-suffix')}`;
+    let existing = !!playersModule.simpleNamesToLoginTokens[simepleName];
+    playersModule.simpleNamesToLoginTokens[simepleName] = data.token;
+    if (!existing) {
+        populateActiveTokenSelect();
+    }
+    setActivePlayerToSimpleName(simepleName);
+    updatePlayerTokenHiddens();
+}
+
+function populateActiveTokenSelect() {
+    /** @type {HTMLSelectElement} */
+    let sel = document.getElementById('active-player-select');
+    while(sel.firstChild) {
+        sel.removeChild(sel.firstChild);
+    }
+    for (const [key, value] of Object.entries(playersModule.simpleNamesToLoginTokens)) {
+        let o = document.createElement('option');
+        o.innerText = key;
+        o.value = value;
+        sel.appendChild(o);
+    }
+}
+
+function setActivePlayerToSimpleName(name) {
+    /** @type {HTMLSelectElement} */
+    let sel = document.getElementById('active-player-select');
+    let opts = sel.options
+    for (let opt, j = 0; opt = opts[j]; j++) {
+        if (opt.value == name) {
+            sel.selectedIndex = j;
+            break;
+        }
+    }
+}
+
+function activePlayerToken() {
+    /** @type {HTMLSelectElement} */
+    let sel = document.getElementById('active-player-select');
+    return sel.options[sel.selectedIndex].value;
+}
+
+function updatePlayerTokenHiddens() {
+    let t = activePlayerToken();
+    for (let el of document.getElementsByClassName('player-token')) {
+        el.value = t;
+    }
 }

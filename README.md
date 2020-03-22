@@ -23,6 +23,36 @@ docker-compose up --build
 
 4. Optional, connect to the debug CLI hosted at `localhost:8080` in a web browser.
 
+
+### Running individually
+
+After Step 2. Previously.
+
+To run the PlayerRegistrar:
+
+```bash
+docker-compose up --build playerregistrar
+```
+
+To run the GameServer Master (MAIN):
+
+```bash
+docker-compose up --build gameserver_master
+```
+
+To run the GameServer Slave (OPTIONAL):
+
+```bash
+docker-compose up --build gameserver_slave
+```
+
+To run the debugwebserver:
+
+```bash
+docker-compose up --build debugwebserver
+```
+
+
 ## API
 
 ### [V1](docs/v1/api.md)

@@ -21,13 +21,13 @@ import (
 
 // Opts contains intialization options and variables for a new GameServerSlave.
 type Opts struct {
-	InstanceID             string
-	GameID                 string
-	PlayerRegistrarAddress string
-	SlaveAddress           string
-	MasterAddress          string
-	ServerTLSConfig        *tls.Config
-	SlaveTLSConfig         *tls.Config
+	InstanceID          string
+	GameID              string
+	SlaveAddress        string
+	MasterAddress       string
+	ServerTLSConfig     *tls.Config
+	SlaveTLSConfig      *tls.Config
+	PlayersRegistrarCli pr.PlayersRegistrarClient
 }
 
 // Controller owns both the GameServer and GameServerSlave and manages their game data.
@@ -37,9 +37,6 @@ type Controller struct {
 
 	masterCli  gs.GameServerMasterClient
 	masterConn *grpc.ClientConn
-
-	playerRegistarCli   pr.PlayersRegistrarClient
-	playerRegistrarConn *grpc.ClientConn
 }
 
 var (
@@ -63,12 +60,6 @@ func NewGameSlaveController(opts Opts) (*Controller, error) {
 	gameID = opts.GameID
 	slaveTLSConfig = opts.SlaveTLSConfig
 
-	playerRegistrarConn, err := grpc.Dial(opts.PlayerRegistrarAddress, grpc.WithTransportCredentials(credentials.NewTLS(slaveTLSConfig)))
-	if err != nil {
-		log.Fatalf("failed to connect: %v", err)
-	}
-	playerRegistrarCli := pr.NewPlayersRegistrarClient(playerRegistrarConn)
-
 	masterConn, err := grpc.Dial(opts.MasterAddress, grpc.WithTransportCredentials(credentials.NewTLS(slaveTLSConfig)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial master: %v", err)
@@ -87,15 +78,14 @@ func NewGameSlaveController(opts Opts) (*Controller, error) {
 	controller = &Controller{
 		server: &GameServer{
 			masterCli:           masterCli,
-			playersRegistrarCli: playerRegistrarCli,
+			playersRegistrarCli: opts.PlayersRegistrarCli,
 		},
 		serverSlave: &GameServerSlave{
 			masterID:            res.GetMasterId(),
 			masterCli:           masterCli,
-			playersRegistrarCli: playerRegistrarCli,
+			playersRegistrarCli: opts.PlayersRegistrarCli,
 		},
-		masterConn:          masterConn,
-		playerRegistrarConn: playerRegistrarConn,
+		masterConn: masterConn,
 	}
 
 	var ok bool
@@ -124,9 +114,6 @@ func (c *Controller) GameServerSlaveInstance() *GameServerSlave {
 
 // Close all open connections
 func (c *Controller) Close() {
-	if c.playerRegistrarConn != nil {
-		c.playerRegistrarConn.Close()
-	}
 	if c.masterConn != nil {
 		c.masterConn.Close()
 	}

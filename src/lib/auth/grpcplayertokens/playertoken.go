@@ -82,12 +82,16 @@ type PlayerAuthIngressArgs struct {
 	AutoRefreshCadence     time.Duration
 }
 
-// NewPlayerAuthIngress builds a new PlayerAuthIngress
+// NewPlayerAuthIngress builds a new PlayerAuthIngress. Refresh cadences < 5 seconds are ignored and set to 1 hour.
 func NewPlayerAuthIngress(args PlayerAuthIngressArgs) PlayerAuthIngress {
+	refreshCadence := args.AutoRefreshCadence
+	if refreshCadence < time.Second*5 {
+		refreshCadence = time.Hour
+	}
 	p := &playerAuthIngress{
 		playersRegistrarClient: args.PlayersRegistrarClient,
 		keys:                   []*registrar.TokenPublicKeysResponse_TimeToPublicKey{},
-		ticker:                 time.NewTicker(args.AutoRefreshCadence),
+		ticker:                 time.NewTicker(refreshCadence),
 	}
 	go func() {
 		p.refreshPublicKeys()

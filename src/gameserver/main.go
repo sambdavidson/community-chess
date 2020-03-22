@@ -11,6 +11,8 @@ go run .\src\gameserver --slave --game_port=8070 --slave_port=8071 --game_id=888
 */
 
 import (
+	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"log"
@@ -19,6 +21,11 @@ import (
 	"os/signal"
 	"sync"
 	"text/tabwriter"
+	"time"
+
+	"google.golang.org/grpc/connectivity"
+
+	"github.com/sambdavidson/community-chess/src/lib/auth/grpcplayertokens"
 
 	"github.com/google/uuid"
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -26,6 +33,7 @@ import (
 	"github.com/sambdavidson/community-chess/src/gameserver/gameslave"
 	"github.com/sambdavidson/community-chess/src/lib/debug"
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
+	pr "github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -38,7 +46,7 @@ var (
 
 	slave                  = flag.Bool("slave", false, "whether or not this server is a GameServerSlave")
 	masterAddress          = flag.String("master_address", "", "addres of GameServerMaster; must be set if --slave is also set")
-	playerRegistrarAddress = flag.String("player_registar_address", "TODO2:8080", "address of the Player Registrar")
+	playerRegistrarAddress = flag.String("player_registar_address", "playerregistrar:443", "address of the Player Registrar")
 	gameID                 = flag.String("game_id", "", "game_id to use, TODO for now is a UUID random generated at startup")
 	instanceID             = flag.String("instance_id", uuid.New().String(), "instance_id which uniquely identifies this running gameserver instance")
 )
@@ -60,9 +68,16 @@ var (
 	serverWG sync.WaitGroup
 )
 
+// Dependent Services
+var (
+	playersRegistrarClient pr.PlayersRegistrarClient
+	playersRegistrarConn   *grpc.ClientConn
+)
+
 func main() {
 	flag.Parse()
 	printConfig()
+	defer closeConnections()
 
 	go handleSIGINT()
 
@@ -71,23 +86,29 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to build slave TLS config: %v", err)
 		}
+		playersRegistrarClient, playersRegistrarConn, err = setupPlayerRegistrar(*playerRegistrarAddress, slaveTLS)
+		if err != nil {
+			log.Fatalf("failed to connect to playerristrar service as slave: %v", err)
+		}
 		slaveController, err = gameslave.NewGameSlaveController(gameslave.Opts{
-			GameID:                 *gameID,
-			PlayerRegistrarAddress: *playerRegistrarAddress,
-			SlaveAddress:           slaveAddress(),
-			MasterAddress:          *masterAddress,
-			SlaveTLSConfig:         slaveTLS,
+			GameID:              *gameID,
+			SlaveAddress:        slaveAddress(),
+			MasterAddress:       *masterAddress,
+			SlaveTLSConfig:      slaveTLS,
+			PlayersRegistrarCli: playersRegistrarClient,
 		})
 		if err != nil {
 			log.Fatalf("failed to build GameSlaveController: %v", err)
 		}
 		creds := grpc.Creds(credentials.NewTLS(slaveTLS))
-
 		gameServer = grpc.NewServer(
 			creds,
 			grpc.UnaryInterceptor(
 				middleware.ChainUnaryServer(
 					debug.UnaryServerInterceptor,
+					grpcplayertokens.NewPlayerAuthIngress(grpcplayertokens.PlayerAuthIngressArgs{
+						PlayersRegistrarClient: playersRegistrarClient,
+					}).GetUnaryServerInterceptor(grpcplayertokens.Reject),
 				),
 			),
 		)
@@ -112,10 +133,14 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to build master TLS config: %v", err)
 		}
+		playersRegistrarClient, playersRegistrarConn, err = setupPlayerRegistrar(*playerRegistrarAddress, masterTLS)
+		if err != nil {
+			log.Fatalf("failed to connect to playerristrar service as master: %v", err)
+		}
 		masterController, err = gamemaster.NewGameMasterController(gamemaster.Opts{
-			GameID:                 *gameID,
-			PlayerRegistrarAddress: *playerRegistrarAddress,
-			MasterTLSConfig:        masterTLS,
+			GameID:              *gameID,
+			MasterTLSConfig:     masterTLS,
+			PlayersRegistrarCli: playersRegistrarClient,
 		})
 		if err != nil {
 			log.Fatalf("failed to build GameMasterController: %v", err)
@@ -126,6 +151,9 @@ func main() {
 			grpc.UnaryInterceptor(
 				middleware.ChainUnaryServer(
 					debug.UnaryServerInterceptor,
+					grpcplayertokens.NewPlayerAuthIngress(grpcplayertokens.PlayerAuthIngressArgs{
+						PlayersRegistrarClient: playersRegistrarClient,
+					}).GetUnaryServerInterceptor(grpcplayertokens.Reject),
 				),
 			),
 		)
@@ -148,8 +176,6 @@ func main() {
 	}
 
 	serverWG.Wait()
-
-	closeConnections()
 }
 
 func printConfig() {
@@ -210,6 +236,9 @@ func closeConnections() {
 	if masterController != nil {
 		masterController.Close()
 	}
+	if playersRegistrarConn != nil {
+		playersRegistrarConn.Close()
+	}
 	if gameServer != nil {
 		log.Println("Gracefully stopping GameServer...")
 		gameServer.GracefulStop()
@@ -222,7 +251,6 @@ func closeConnections() {
 		log.Println("Gracefully stopping MasterServer...")
 		masterServer.GracefulStop()
 	}
-
 }
 
 func init() {
@@ -248,4 +276,22 @@ func slaveAddress() string {
 		hostname = "localhost"
 	}
 	return fmt.Sprintf("%s:%d", hostname, *slavePort)
+}
+
+func setupPlayerRegistrar(addr string, tlsConf *tls.Config) (pr.PlayersRegistrarClient, *grpc.ClientConn, error) {
+	log.Printf("Connecting to playerregistrar at address: %s...", addr)
+	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConf)))
+	if err != nil {
+		return nil, nil, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	ok := conn.WaitForStateChange(ctx, connectivity.Connecting)
+	if !ok || conn.GetState() == connectivity.TransientFailure || conn.GetState() == connectivity.Shutdown {
+		return nil, nil, fmt.Errorf("failed to connect to playerregistar, conn state: %v", conn.GetState())
+	}
+	fmt.Print("done\n")
+	cli := pr.NewPlayersRegistrarClient(conn)
+	return cli, conn, nil
 }

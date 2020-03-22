@@ -8,6 +8,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/sambdavidson/community-chess/src/proto/messages"
+	"github.com/sambdavidson/community-chess/src/proto/messages/games"
+
+	"github.com/sambdavidson/community-chess/src/lib/auth/grpcplayertokens"
+
 	gs "github.com/sambdavidson/community-chess/src/proto/services/games/server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -20,8 +25,9 @@ type Handler struct {
 }
 
 var (
-	conn *grpc.ClientConn
-	gsc  gs.GameServerClient
+	conn              *grpc.ClientConn
+	gsc               gs.GameServerClient
+	errorNotConnected = fmt.Errorf("not not connected to Game Server service")
 )
 
 func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -96,10 +102,15 @@ func (h *Handler) connectionstatus(rw http.ResponseWriter, req *http.Request) {
 func (h *Handler) game(rw http.ResponseWriter, req *http.Request) {
 	if gsc == nil {
 		rw.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintln(rw, "Not not connected to Game Server service.")
+		fmt.Fprintln(rw, errorNotConnected)
 		return
 	}
-	res, err := gsc.Game(context.Background(), &gs.GameRequest{
+	ctx, err := ctxWithPToken(req.FormValue("player-token"))
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(err)
+	}
+	res, err := gsc.Game(ctx, &gs.GameRequest{
 		Detailed: req.FormValue("gs-game-detailed") == "false",
 	})
 	if err != nil {
@@ -114,48 +125,106 @@ func (h *Handler) game(rw http.ResponseWriter, req *http.Request) {
 func (h *Handler) metadata(rw http.ResponseWriter, req *http.Request) {
 	if gsc == nil {
 		rw.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintln(rw, "Not not connected to Game Server service.")
+		fmt.Fprintln(rw, errorNotConnected)
 		return
 	}
-	rw.WriteHeader(http.StatusNotImplemented)
+	res, err := gsc.Metadata(context.Background(), &gs.MetadataRequest{})
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(err)
+		return
+	}
+	rw.WriteHeader(http.StatusOK)
+	json.NewEncoder(rw).Encode(res)
 }
 
 func (h *Handler) state(rw http.ResponseWriter, req *http.Request) {
 	if gsc == nil {
 		rw.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintln(rw, "Not not connected to Game Server service.")
+		fmt.Fprintln(rw, errorNotConnected)
 		return
 	}
-	rw.WriteHeader(http.StatusNotImplemented)
+	res, err := gsc.State(context.Background(), &gs.StateRequest{
+		Detailed: req.FormValue("gs-state-detailed") == "false",
+	})
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(err)
+		return
+	}
+	rw.WriteHeader(http.StatusOK)
+	json.NewEncoder(rw).Encode(res)
 }
 func (h *Handler) history(rw http.ResponseWriter, req *http.Request) {
 	if gsc == nil {
 		rw.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintln(rw, "Not not connected to Game Server service.")
+		fmt.Fprintln(rw, errorNotConnected)
 		return
 	}
-	rw.WriteHeader(http.StatusNotImplemented)
+	res, err := gsc.History(context.Background(), &gs.HistoryRequest{
+		Detailed: req.FormValue("gs-history-detailed") == "false",
+	})
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(err)
+		return
+	}
+	rw.WriteHeader(http.StatusOK)
+	json.NewEncoder(rw).Encode(res)
 }
 func (h *Handler) join(rw http.ResponseWriter, req *http.Request) {
 	if gsc == nil {
 		rw.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintln(rw, "Not not connected to Game Server service.")
+		fmt.Fprintln(rw, errorNotConnected)
 		return
 	}
-	rw.WriteHeader(http.StatusNotImplemented)
+	ctx, err := ctxWithPToken(req.FormValue("player-token"))
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(err)
+	}
+	res, err := gsc.Join(ctx, &gs.JoinRequest{
+		Fields: &messages.Game_NewPlayerFields{
+			Game: &messages.Game_NewPlayerFields_ChessFields{
+				ChessFields: &games.ChessNewPlayerFields{
+					WhiteTeam: req.FormValue("gs-join-team") != "false",
+				},
+			},
+		},
+	})
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(err)
+		return
+	}
+	rw.WriteHeader(http.StatusOK)
+	json.NewEncoder(rw).Encode(res)
 }
 func (h *Handler) leave(rw http.ResponseWriter, req *http.Request) {
 	if gsc == nil {
 		rw.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintln(rw, "Not not connected to Game Server service.")
+		fmt.Fprintln(rw, errorNotConnected)
 		return
 	}
-	rw.WriteHeader(http.StatusNotImplemented)
+	ctx, err := ctxWithPToken(req.FormValue("player-token"))
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(err)
+	}
+	res, err := gsc.Leave(ctx, &gs.LeaveRequest{})
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(err)
+		return
+	}
+	rw.WriteHeader(http.StatusOK)
+	json.NewEncoder(rw).Encode(res)
 }
 func (h *Handler) postvote(rw http.ResponseWriter, req *http.Request) {
+
 	if gsc == nil {
 		rw.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintln(rw, "Not not connected to Game Server service.")
+		fmt.Fprintln(rw, errorNotConnected)
 		return
 	}
 	rw.WriteHeader(http.StatusNotImplemented)
@@ -163,8 +232,19 @@ func (h *Handler) postvote(rw http.ResponseWriter, req *http.Request) {
 func (h *Handler) status(rw http.ResponseWriter, req *http.Request) {
 	if gsc == nil {
 		rw.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprintln(rw, "Not not connected to Game Server service.")
+		fmt.Fprintln(rw, errorNotConnected)
 		return
 	}
 	rw.WriteHeader(http.StatusNotImplemented)
+}
+
+func ctxWithPToken(t string) (context.Context, error) {
+	if len(t) < 20 {
+		return nil, fmt.Errorf("bad player id: %s", t)
+	}
+	ctx, err := grpcplayertokens.AppendPlayerAuthToOutgoingContext(context.Background(), t)
+	if err != nil {
+		return nil, err
+	}
+	return ctx, nil
 }
