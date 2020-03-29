@@ -21,6 +21,7 @@ services:
             --ca_bundle_path=/run/secrets/ca_cert.pem
             --tls_cert_path=/run/secrets/pr_cert.pem
             --tls_private_key_path=/run/secrets/pr_pk.pem
+            --database_kind=postgres
             --debug
     gameserver_master:
         build:

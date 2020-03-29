@@ -10,6 +10,8 @@ import (
 	"log"
 	"net"
 
+	"github.com/sambdavidson/community-chess/src/playerregistrar/database"
+
 	"github.com/sambdavidson/community-chess/src/lib/debug"
 	"github.com/sambdavidson/community-chess/src/playerregistrar/server"
 
@@ -54,7 +56,13 @@ func main() {
 			),
 		),
 	)
-	svr, err := server.New(&server.Opts{})
+	db, err := database.DefaultInstance()
+	if err != nil {
+		log.Fatalf("failed getting default database instance: %v", err)
+	}
+	svr, err := server.New(&server.Opts{
+		DB: db,
+	})
 	if err != nil {
 		log.Fatal(err)
 	}

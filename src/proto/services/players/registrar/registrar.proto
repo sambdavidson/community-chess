@@ -10,7 +10,7 @@ package registrar;
 
 service PlayersRegistrar {
     rpc RegisterPlayer (RegisterPlayerRequest) returns (RegisterPlayerResponse);
-    rpc GetPlayer (GetPlayerRequest) returns (GetPlayerReponse);
+    rpc GetPlayer (GetPlayerRequest) returns (GetPlayerReponse); // TODO: split up by ID and by username
     rpc Login(LoginRequest) returns (LoginResponse);
     rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
 
