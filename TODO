@@ -1,3 +1,3 @@
-- I have setup the playerregistarar to talk to the postgres database at localhost:****. The problem is once the playerregistar is in
-a container it can't talk to localhost anymore. I need to figure out container routing such that it can talk to localhost again. Or
-do something where the database is remote.
+The postgres playertoken stuff seems to mostly be done. it need to be tests.
+Work on spinning up the full containers and see if playertokens are being
+created in the db and used everywhere.

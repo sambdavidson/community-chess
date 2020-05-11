@@ -1,6 +1,9 @@
 package database
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"sync"
 	"time"
 
@@ -16,6 +19,9 @@ type memoryDB struct {
 	players             map[string]*messages.Player
 	usernameCounts      map[string]int32
 	usernameNumbersToID map[string]map[int32]string
+
+	keyMux sync.RWMutex
+	keys   []*messages.TimedPrivateKey
 }
 
 func memoryInstance() Database {
@@ -76,6 +82,29 @@ func (db *memoryDB) GetPlayerByUsername(username string, suffix int32) (*message
 		return nil, nil
 	}
 	return db.GetPlayerByID(id)
+}
+
+// GetAllValidKeys returns the in-memory set of TimedPrivateKeys.
+func (db *memoryDB) GetAllValidKeys() ([]*messages.TimedPrivateKey, error) {
+	db.keyMux.RLock()
+	defer db.keyMux.RUnlock()
+	return db.keys, nil
+}
+
+// AddKey adds a new TimedPrivateKey to the in-memory set.
+func (db *memoryDB) AddKey(key *rsa.PrivateKey, validSeconds int64) error {
+	db.keyMux.Lock()
+	defer db.keyMux.Unlock()
+	db.keys = append(db.keys, &messages.TimedPrivateKey{
+		KeyId:        int64(len(db.keys)),
+		Iss:          int64(time.Now().Second()),
+		ValidSeconds: validSeconds,
+		PemPrivateKey: pem.EncodeToMemory(&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(key),
+		}),
+	})
+	return nil
 }
 
 // Close the connection to the database.

@@ -22,6 +22,10 @@ services:
             --tls_cert_path=/run/secrets/pr_cert.pem
             --tls_private_key_path=/run/secrets/pr_pk.pem
             --database_kind=postgres
+            --postgres_host=192.168.86.229
+            --postgres_port=5433
+            --keyer
+            --add_key_on_empty_db
             --debug
     gameserver_master:
         build:

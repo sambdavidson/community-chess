@@ -28,8 +28,9 @@ type Server struct {
 
 // New returns a new server that implements a player registrar.
 func New(opts *Opts) (*Server, error) {
-	// TODO Query DB
-	iss, err := playertoken.NewTokenIssuer(nil)
+	iss, err := playertoken.NewTokenIssuer(&playertoken.IssuerOpts{
+		DB: opts.DB,
+	})
 	if err != nil {
 		return nil, err
 	}

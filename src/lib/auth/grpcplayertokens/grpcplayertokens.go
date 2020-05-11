@@ -2,9 +2,13 @@ package grpcplayertokens
 
 import (
 	"context"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"flag"
 	"fmt"
 	"log"
-	"math"
+	"strconv"
 	"sync"
 	"time"
 
@@ -15,6 +19,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/sambdavidson/community-chess/src/proto/messages"
 	"github.com/sambdavidson/community-chess/src/proto/services/players/registrar"
 )
 
@@ -76,21 +81,36 @@ const (
 	Ignore
 )
 
+type parsedKey struct {
+	proto  *messages.TimedPublicKey
+	parsed *rsa.PublicKey
+}
+
 // PlayerAuthIngressArgs are the arguments for a new PlayerAuthIngress
 type PlayerAuthIngressArgs struct {
 	PlayersRegistrarClient registrar.PlayersRegistrarClient
 	AutoRefreshCadence     time.Duration
 }
 
+type playerAuthIngress struct {
+	playersRegistrarClient registrar.PlayersRegistrarClient
+
+	mux        sync.Mutex
+	keys       map[int64]*parsedKey
+	largestKID int64
+	ticker     *time.Ticker
+}
+
 // NewPlayerAuthIngress builds a new PlayerAuthIngress. Refresh cadences < 5 seconds are ignored and set to 1 hour.
 func NewPlayerAuthIngress(args PlayerAuthIngressArgs) PlayerAuthIngress {
 	refreshCadence := args.AutoRefreshCadence
-	if refreshCadence < time.Second*5 {
+	if refreshCadence == 0 {
 		refreshCadence = time.Hour
 	}
 	p := &playerAuthIngress{
 		playersRegistrarClient: args.PlayersRegistrarClient,
-		keys:                   []*registrar.TokenPublicKeysResponse_TimeToPublicKey{},
+		keys:                   map[int64]*parsedKey{},
+		largestKID:             -1, // Must be < 0 starting, because kID can be 0
 		ticker:                 time.NewTicker(refreshCadence),
 	}
 	go func() {
@@ -100,14 +120,6 @@ func NewPlayerAuthIngress(args PlayerAuthIngressArgs) PlayerAuthIngress {
 		}
 	}()
 	return p
-}
-
-type playerAuthIngress struct {
-	playersRegistrarClient registrar.PlayersRegistrarClient
-
-	mux    sync.Mutex
-	keys   []*registrar.TokenPublicKeysResponse_TimeToPublicKey
-	ticker *time.Ticker
 }
 
 func (p *playerAuthIngress) GetUnaryServerInterceptor(failureMode ValidationFailureMode) grpc.UnaryServerInterceptor {
@@ -135,13 +147,16 @@ func (p *playerAuthIngress) tokenToMDSubject(ctx context.Context, req interface{
 	}
 	t, err := jwt.ParseWithClaims(vals[0], &jwt.StandardClaims{}, p.keyForToken)
 	if err != nil {
+		debugLogf("jwt parse error: %v", err)
 		return errBadPlayerToken
 	}
 	c, ok := t.Claims.(*jwt.StandardClaims)
 	if !ok {
+		debugLogf("unable to cast claims")
 		return errBadPlayerToken
 	}
 	if err = c.Valid(); err != nil {
+		debugLogf("claims invalid")
 		return errBadPlayerToken
 	}
 	// Token is valid, write the validated player ID to context.
@@ -158,38 +173,22 @@ func (p *playerAuthIngress) keyForToken(t *jwt.Token) (interface{}, error) {
 	if !ok {
 		return nil, fmt.Errorf("player token claims are incorrect type")
 	}
-
-	b, err := p.keyForTime(c.IssuedAt)
-	if err != nil || b == nil {
-		return nil, err
+	kID, err := strconv.ParseInt(c.Issuer, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing playertoken issuer, should be int64: %v", err)
 	}
-	return jwt.ParseRSAPublicKeyFromPEM(b)
+	return p.keyForID(kID)
 }
 
-func (p *playerAuthIngress) keyForTime(iss int64) ([]byte, error) {
-	// Keys are sorted to newest to oldest, so the first key we are after the NotBefore should be correct.
-	retry := true
-	retried := false
-	for retry {
-		for _, k := range p.keys {
-			retry = false
-			if iss >= k.GetNotBefore() {
-				if iss > k.GetNotAfter() {
-					if !retried {
-						retry = true
-					}
-					break
-				} else {
-					return k.GetPemPublicKey(), nil
-				}
-			}
-		}
-		if retry && !retried {
-			p.refreshPublicKeys()
-			retried = true
-		}
+func (p *playerAuthIngress) keyForID(id int64) (*rsa.PublicKey, error) {
+	if id > p.largestKID {
+		p.refreshPublicKeys()
 	}
-	return nil, fmt.Errorf("missing key for time: %d", iss)
+	key, ok := p.keys[id]
+	if !ok {
+		return nil, fmt.Errorf("no key for key_id: %v", id)
+	}
+	return key.parsed, nil
 }
 
 func (p *playerAuthIngress) refreshPublicKeys() {
@@ -201,20 +200,40 @@ func (p *playerAuthIngress) refreshPublicKeys() {
 		return
 	}
 	history := res.GetHistory()
-	if len(history) == 0 {
-		log.Printf("error: bad player token public keys, history is empty")
-		return
-	}
-	var newest int64 = math.MaxInt64
+
+	keys := map[int64]*parsedKey{}
+	var largestKID int64
 	for _, hk := range history {
-		if hk.GetNotBefore() > newest {
-			log.Printf("error: public key history is not chronologically newest to oldest: %v", history)
-			return
+		block, _ := pem.Decode(hk.GetPemPublicKey())
+		if block == nil {
+			log.Printf("bad pem key data, no pem block")
+			continue
 		}
-		newest = hk.GetNotBefore()
+		pk, err := x509.ParsePKCS1PublicKey(block.Bytes)
+		if err != nil {
+			log.Printf("error: unable to marshal public key, key_id: %v", hk.GetKeyId())
+			continue
+		}
+		keys[hk.GetKeyId()] = &parsedKey{
+			proto:  hk,
+			parsed: pk,
+		}
+		if largestKID < hk.GetKeyId() {
+			largestKID = hk.GetKeyId()
+		}
+	}
+	if len(keys) == 0 {
+		log.Printf("error: bad player token public keys set is empty")
+		return
 	}
 	p.mux.Lock()
 	defer p.mux.Unlock()
-	p.keys = history
+	p.keys = keys
+	p.largestKID = largestKID
+}
 
+func debugLogf(format string, v ...interface{}) {
+	if f := flag.Lookup("debug"); f != nil && f.Value.(flag.Getter).Get().(bool) || true {
+		log.Printf(format, v...)
+	}
 }

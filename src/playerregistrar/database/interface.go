@@ -1,6 +1,7 @@
 package database
 
 import (
+	"crypto/rsa"
 	"flag"
 	"fmt"
 	"strings"
@@ -19,6 +20,8 @@ type Database interface {
 	RegisterPlayer(string) (*messages.Player, error)
 	GetPlayerByID(string) (*messages.Player, error)
 	GetPlayerByUsername(string, int32) (*messages.Player, error)
+	GetAllValidKeys() ([]*messages.TimedPrivateKey, error)
+	AddKey(key *rsa.PrivateKey, validSeconds int64) error
 	Close()
 }
 

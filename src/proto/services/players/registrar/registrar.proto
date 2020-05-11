@@ -5,6 +5,7 @@ protoc --proto_path=src/proto --proto_path=C:\Users\samda\go\src --go_out=plugin
 syntax = "proto3";
 
 import "github.com/sambdavidson/community-chess/src/proto/messages/player.proto";
+import "github.com/sambdavidson/community-chess/src/proto/messages/timekey.proto";
 
 package registrar;
 
@@ -58,13 +59,5 @@ message TokenPublicKeysRequest {}
 
 message TokenPublicKeysResponse {
     // Public keys are used up until the next timestamp. Sorted in newest to oldest.
-    repeated TimeToPublicKey history = 1;
-
-    message TimeToPublicKey {
-        // Seconds since epoch.
-        int64 not_before = 1;
-        int64 not_after = 2;
-        // PEM encoded RSA 2048 Public Key
-        bytes pem_public_key = 3; 
-    }
+    repeated messages.TimedPublicKey history = 1;
 }

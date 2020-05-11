@@ -23,6 +23,7 @@ var (
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	flag.Parse()
 	tlscfg, err := tlsConfig()
 	if err != nil {

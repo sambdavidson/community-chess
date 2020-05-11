@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package messages;
+
+message TimedPrivateKey {
+    int64 key_id = 1;
+    // Seconds since EPOCH.
+    int64 iss = 2;
+    int64 valid_seconds = 3;
+
+    // PEM encoded RSA 2048 private key.
+    bytes pem_private_key = 4;
+}
+
+message TimedPublicKey {
+    int64 key_id = 1;
+    // Seconds since EPOCH.
+    int64 iss = 2;
+    int64 valid_seconds = 3;
+
+    // PEM encoded RSA 2048 public key.
+    bytes pem_public_key = 4;
+}

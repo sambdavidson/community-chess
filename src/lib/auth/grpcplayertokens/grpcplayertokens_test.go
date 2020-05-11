@@ -6,10 +6,11 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"math"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/sambdavidson/community-chess/src/proto/messages"
 
 	jwt "github.com/dgrijalva/jwt-go"
 
@@ -84,8 +85,6 @@ func TestIngressUnaryInterceptor(t *testing.T) {
 	now := time.Unix(100, 0)
 	jwt.TimeFunc = func() time.Time { return now } // Stub out time.Now such that we can test invalid certs.
 
-	type ttpk = registrar.TokenPublicKeysResponse_TimeToPublicKey
-
 	jwtSignedString := func(pk *rsa.PrivateKey, claims *jwt.StandardClaims) string {
 		j := jwt.NewWithClaims(jwt.SigningMethodRS512, claims)
 		ss, err := j.SignedString(pk)
@@ -96,21 +95,25 @@ func TestIngressUnaryInterceptor(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		desc             string
-		initHistory      []*registrar.TokenPublicKeysResponse_TimeToPublicKey
-		registrarHistory []*registrar.TokenPublicKeysResponse_TimeToPublicKey
-		jwt              string
-		wantErr          bool
+		desc          string
+		initKeys      map[int64]*parsedKey
+		registrarKeys []*messages.TimedPublicKey
+		jwt           string
+		wantErr       bool
 	}{
 		{
 			desc: "happy init history has pk",
-			initHistory: []*ttpk{
-				historyKey(t, pk1, 0, 50),
+			initKeys: map[int64]*parsedKey{
+				1: &parsedKey{
+					proto:  keygen(t, pk1, 1, 0, 50),
+					parsed: &pk1.PublicKey,
+				},
 			},
-			registrarHistory: []*ttpk{
-				historyKey(t, pk1, 0, 50),
+			registrarKeys: []*messages.TimedPublicKey{
+				keygen(t, pk1, 1, 0, 500),
 			},
 			jwt: jwtSignedString(pk1, &jwt.StandardClaims{
+				Issuer:    "1",
 				IssuedAt:  10,
 				NotBefore: 10,
 				ExpiresAt: 150,
@@ -119,12 +122,13 @@ func TestIngressUnaryInterceptor(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			desc:        "happy query for missing history",
-			initHistory: []*ttpk{},
-			registrarHistory: []*ttpk{
-				historyKey(t, pk1, 0, 50),
+			desc:     "happy query for missing history",
+			initKeys: map[int64]*parsedKey{},
+			registrarKeys: []*messages.TimedPublicKey{
+				keygen(t, pk1, 1, 0, 50),
 			},
 			jwt: jwtSignedString(pk1, &jwt.StandardClaims{
+				Issuer:    "1",
 				IssuedAt:  10,
 				NotBefore: 10,
 				ExpiresAt: 150,
@@ -134,14 +138,18 @@ func TestIngressUnaryInterceptor(t *testing.T) {
 		},
 		{
 			desc: "happy new key query for new history",
-			initHistory: []*ttpk{
-				historyKey(t, pk1, 0, 50),
+			initKeys: map[int64]*parsedKey{
+				1: &parsedKey{
+					proto:  keygen(t, pk1, 1, 0, 50),
+					parsed: &pk1.PublicKey,
+				},
 			},
-			registrarHistory: []*ttpk{
-				historyKey(t, pk2, 50, 90),
-				historyKey(t, pk1, 0, 50),
+			registrarKeys: []*messages.TimedPublicKey{
+				keygen(t, pk2, 2, 50, 90),
+				keygen(t, pk1, 1, 0, 50),
 			},
 			jwt: jwtSignedString(pk2, &jwt.StandardClaims{
+				Issuer:    "2",
 				IssuedAt:  60,
 				NotBefore: 60,
 				ExpiresAt: 200,
@@ -151,24 +159,31 @@ func TestIngressUnaryInterceptor(t *testing.T) {
 		},
 		{
 			desc: "sad missing jwt",
-			initHistory: []*ttpk{
-				historyKey(t, pk1, 0, 50),
+			initKeys: map[int64]*parsedKey{
+				1: &parsedKey{
+					proto:  keygen(t, pk1, 1, 0, 50),
+					parsed: &pk1.PublicKey,
+				},
 			},
-			registrarHistory: []*ttpk{
-				historyKey(t, pk1, 0, 50),
+			registrarKeys: []*messages.TimedPublicKey{
+				keygen(t, pk1, 1, 0, 50),
 			},
 			jwt:     "",
 			wantErr: true,
 		},
 		{
 			desc: "sad bad key",
-			initHistory: []*ttpk{
-				historyKey(t, pk1, 0, 50),
+			initKeys: map[int64]*parsedKey{
+				1: &parsedKey{
+					proto:  keygen(t, pk1, 1, 0, 50),
+					parsed: &pk1.PublicKey,
+				},
 			},
-			registrarHistory: []*ttpk{
-				historyKey(t, pk1, 0, 50),
+			registrarKeys: []*messages.TimedPublicKey{
+				keygen(t, pk1, 1, 0, 50),
 			},
-			jwt: jwtSignedString(pk2, &jwt.StandardClaims{ // pk2
+			jwt: jwtSignedString(pk2, &jwt.StandardClaims{
+				Issuer:    "2",
 				IssuedAt:  10,
 				NotBefore: 10,
 				ExpiresAt: 150,
@@ -178,13 +193,17 @@ func TestIngressUnaryInterceptor(t *testing.T) {
 		},
 		{
 			desc: "sad key out of range",
-			initHistory: []*ttpk{
-				historyKey(t, pk1, 0, 50),
+			initKeys: map[int64]*parsedKey{
+				1: &parsedKey{
+					proto:  keygen(t, pk1, 1, 0, 50),
+					parsed: &pk1.PublicKey,
+				},
 			},
-			registrarHistory: []*ttpk{
-				historyKey(t, pk1, 0, 50),
+			registrarKeys: []*messages.TimedPublicKey{
+				keygen(t, pk1, 1, 0, 50),
 			},
-			jwt: jwtSignedString(pk1, &jwt.StandardClaims{ // pk2
+			jwt: jwtSignedString(pk1, &jwt.StandardClaims{
+				Issuer:    "2",
 				IssuedAt:  60,
 				NotBefore: 60,
 				ExpiresAt: 150,
@@ -196,9 +215,9 @@ func TestIngressUnaryInterceptor(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			ing := &playerAuthIngress{
 				playersRegistrarClient: &mockPlayerRegistrarClient{
-					keys: tc.registrarHistory,
+					keys: tc.registrarKeys,
 				},
-				keys: tc.initHistory,
+				keys: tc.initKeys,
 			}
 			interceptor := ing.GetUnaryServerInterceptor(Reject)
 			ctx := metadata.NewIncomingContext(context.TODO(), metadata.MD{
@@ -239,18 +258,16 @@ func privateRSA(t *testing.T) *rsa.PrivateKey {
 	return pk
 }
 
-func historyKey(t *testing.T, pk *rsa.PrivateKey, notbefore, notafter int64) *registrar.TokenPublicKeysResponse_TimeToPublicKey {
-	pubASN1, err := x509.MarshalPKIXPublicKey(&pk.PublicKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return &registrar.TokenPublicKeysResponse_TimeToPublicKey{
+func keygen(t *testing.T, pk *rsa.PrivateKey, id, iss, ttl int64) *messages.TimedPublicKey {
+	pubASN1 := x509.MarshalPKCS1PublicKey(&pk.PublicKey)
+	return &messages.TimedPublicKey{
+		KeyId:        id,
+		Iss:          iss,
+		ValidSeconds: ttl,
 		PemPublicKey: pem.EncodeToMemory(&pem.Block{
 			Type:  "RSA PUBLIC KEY",
 			Bytes: pubASN1,
 		}),
-		NotBefore: notbefore,
-		NotAfter:  notafter,
 	}
 }
 
@@ -305,28 +322,26 @@ func TestValidatedPlayerIDFromIncomingContext(t *testing.T) {
 }
 
 func TestAutoRefresh(t *testing.T) {
+	k1 := keygen(t, privateRSA(t), 0, 1000, 1000)
+	k2 := keygen(t, privateRSA(t), 1, 2000, 1000)
 	cli := &mockPlayerRegistrarClient{
-		keys: []*registrar.TokenPublicKeysResponse_TimeToPublicKey{
-			&registrar.TokenPublicKeysResponse_TimeToPublicKey{
-				PemPublicKey: []byte{0x1, 0x2, 0x3},
-				NotBefore:    0,
-				NotAfter:     math.MaxInt64,
-			},
-		},
+		keys: []*messages.TimedPublicKey{k1},
 	}
 	ing := NewPlayerAuthIngress(PlayerAuthIngressArgs{
 		AutoRefreshCadence:     time.Millisecond * 250,
 		PlayersRegistrarClient: cli,
 	}).(*playerAuthIngress)
 	time.Sleep(time.Second)
-	cli.keys[0].PemPublicKey = []byte{0x11, 0x22, 0x33} // Update key and see if that is reflected
+	cli.keys = append(cli.keys, k2) // Update keys and see if that is reflected
 	time.Sleep(time.Second)
 	ing.ticker.Stop()
 	if cli.calls < 8 || cli.calls > 9 {
 		t.Errorf("expected player registrar client to be called either 8 or 9 times, instead was called %d times", cli.calls)
 	}
-	if len(ing.keys) != 1 && !reflect.DeepEqual(ing.keys[0].PemPublicKey, []byte{0x11, 0x22, 0x33}) {
-		t.Errorf("invalid ending keys, got: %v; want: %v", ing.keys, cli.keys)
+	if len(ing.keys) != 2 ||
+		!reflect.DeepEqual(ing.keys[0].proto, k1) ||
+		!reflect.DeepEqual(ing.keys[1].proto, k2) {
+		t.Errorf("invalid ending keys %v", ing.keys)
 	}
 }
 
@@ -337,7 +352,7 @@ var (
 
 type mockPlayerRegistrarClient struct {
 	calls int
-	keys  []*registrar.TokenPublicKeysResponse_TimeToPublicKey
+	keys  []*messages.TimedPublicKey
 }
 
 func (c *mockPlayerRegistrarClient) RegisterPlayer(ctx context.Context, in *registrar.RegisterPlayerRequest, opts ...grpc.CallOption) (*registrar.RegisterPlayerResponse, error) {

@@ -75,6 +75,7 @@ var (
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	flag.Parse()
 	printConfig()
 	defer closeConnections()

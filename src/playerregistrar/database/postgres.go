@@ -1,9 +1,13 @@
 package database
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
 	"database/sql"
+	"encoding/pem"
 	"flag"
 	"fmt"
+	"time"
 
 	"github.com/sambdavidson/community-chess/src/proto/messages"
 
@@ -59,6 +63,52 @@ func (db *postgresDB) GetPlayerByUsername(username string, suffix int32) (*messa
 		return nil, nil
 	}
 	return scanRowIntoPlayer(rows)
+}
+
+// GetAllValidKeys returns all valid player signing keys from the DB.
+func (db *postgresDB) GetAllValidKeys() ([]*messages.TimedPrivateKey, error) {
+	rows, err := db.Query("SELECT key_id, iss_seconds, valid_seconds, key_pem FROM public.playertoken_keys WHERE expires_at_seconds > $1;",
+		time.Now().Unix(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	var out []*messages.TimedPrivateKey
+	for rows.Next() {
+		tpk := &messages.TimedPrivateKey{}
+		err := rows.Scan(
+			&tpk.KeyId,
+			&tpk.Iss,
+			&tpk.ValidSeconds,
+			&tpk.PemPrivateKey,
+		)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, tpk)
+	}
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+	return out, nil
+}
+
+// AddKey converts the passed RSA key to a TimedPrivateKey and adds it to the
+// postgress DB.
+func (db *postgresDB) AddKey(key *rsa.PrivateKey, validSeconds int64) error {
+	_, err := db.Query(
+		"INSERT INTO public.playertoken_keys (iss_seconds, valid_seconds, key_pem) VALUES ($1, $2, $3);",
+		time.Now().Unix(),
+		validSeconds,
+		pem.EncodeToMemory(&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(key),
+		}),
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (db *postgresDB) Close() {
