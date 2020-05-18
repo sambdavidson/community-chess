@@ -14,7 +14,7 @@ NOTE: Make sure you have Docker (and Docker Compose) installed
 
 2. Build the base protos and builder image
 ```bash
-./src/rebuild_bash.sh
+.\src\rebuild_base.sh
 ```
 3. Build and run all microservices with Docker Compose
 ```bash

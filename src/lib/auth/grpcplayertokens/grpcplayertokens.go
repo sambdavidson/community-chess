@@ -175,7 +175,7 @@ func (p *playerAuthIngress) keyForToken(t *jwt.Token) (interface{}, error) {
 	}
 	kID, err := strconv.ParseInt(c.Issuer, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing playertoken issuer, should be int64: %v", err)
+		return nil, fmt.Errorf("error parsing playertoken issuer%v", err)
 	}
 	return p.keyForID(kID)
 }
@@ -233,7 +233,7 @@ func (p *playerAuthIngress) refreshPublicKeys() {
 }
 
 func debugLogf(format string, v ...interface{}) {
-	if f := flag.Lookup("debug"); f != nil && f.Value.(flag.Getter).Get().(bool) || true {
+	if f := flag.Lookup("debug"); f != nil && f.Value.(flag.Getter).Get().(bool) {
 		log.Printf(format, v...)
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"strconv"
 	"sync"
 	"time"
 
@@ -79,7 +80,7 @@ func (i *Issuer) TokenForPlayer(p *messages.Player) (string, error) {
 	}
 	now := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodRS512, &jwt.StandardClaims{
-		Issuer:    string(id),
+		Issuer:    strconv.FormatInt(id, 10),
 		IssuedAt:  now.Unix(),
 		NotBefore: now.Unix(),
 		ExpiresAt: now.Add(i.tokenTTL).Unix(),
