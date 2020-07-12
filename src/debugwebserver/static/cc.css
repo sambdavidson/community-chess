@@ -10,10 +10,6 @@ pre {
     word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
 
-#sections {
-    padding: 8px;
-}
-
 #players {background-color: #aaffaa;}
 #gameserver {background-color: #aaaaff;}
 #gamemaster {background-color: #ffaaaa;}
@@ -25,4 +21,12 @@ pre {
 }
 #login-number-suffix {
     width: 160px;
+}
+
+body {
+    margin: 0;
+}
+
+#sections div {
+    padding: 8px;
 }

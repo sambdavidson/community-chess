@@ -31,6 +31,9 @@ func main() {
 	}
 
 	http.Handle("/", http.FileServer(http.Dir(*staticDir)))
+	// http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	// 	http.ServeFile(w, r, path.Join(*staticDir, "index.html"))
+	// })
 	http.Handle("/players/", http.StripPrefix("/players/", &players.Handler{TLS: tlscfg}))
 	http.Handle("/games/", http.StripPrefix("/games/", &gameserver.Handler{TLS: tlscfg}))
 	http.Handle("/gamemaster/", http.StripPrefix("/gamemaster/", &gamemaster.Handler{TLS: tlscfg}))
