@@ -22,3 +22,8 @@ build/Release
 
 # Generated proto go files
 *.pb.go
+
+node_modules
+dist
+
+auth_config.json
