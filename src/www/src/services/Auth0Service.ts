@@ -1,4 +1,4 @@
-import createAuth0Client, {Auth0Client, Auth0ClientOptions} from '@auth0/auth0-spa-js';
+import createAuth0Client, {Auth0Client, Auth0ClientOptions, IdToken} from '@auth0/auth0-spa-js';
 
 export class Auth0Service {
     private static fetchAuthConfig: () => Promise<Response> = () => fetch(
@@ -24,6 +24,10 @@ export class Auth0Service {
             resolutionFn(auth0);
         })();
     })
+
+    public static async User():Promise<IdToken> {
+        return <IdToken>(await (await Auth0Service.Auth0).getUser());
+    }
 }
 
-Auth0Service.Auth0.then((a)=>{console.log("loader", a)}); // Async loader
+Auth0Service.Auth0.then(()=>{}); // Async loader to kickstart the promise.

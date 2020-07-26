@@ -1,12 +1,14 @@
 import * as React from "react";
 import { Auth0Service } from "../services/Auth0Service";
+import {IdToken} from '@auth0/auth0-spa-js';
 
 // 'LoginProps' describes the shape of props.
 // State is never set so we use the '{}' type.
 
 interface LoginState {
     authenticated: boolean;
-    user: any;
+    user: IdToken;
+
 }
 
 export class Login extends React.Component<{}, LoginState> {
@@ -21,7 +23,8 @@ export class Login extends React.Component<{}, LoginState> {
             const auth0 = await Auth0Service.Auth0;
             this.setState({
                 authenticated: await auth0.isAuthenticated(),
-                user: await auth0.getUser(),
+                user: await auth0.getIdTokenClaims(),
+                
             })
         })();
     }
@@ -38,14 +41,21 @@ export class Login extends React.Component<{}, LoginState> {
           });
     }
 
+    private async account() {
+        console.log('todo account')
+    }
+
     render() {
         return <div>
             <pre>{JSON.stringify(this.state.user, null, 2)}</pre>
+            <pre>{}</pre>
             <p>
-                <button id="btn-login" disabled={this.state.authenticated} 
+                <button disabled={this.state.authenticated} 
                     onClick={this.login}>Log in</button>
-                <button id="btn-logout" disabled={!this.state.authenticated}
+                <button disabled={!this.state.authenticated}
                     onClick={this.logout}>Log out</button>
+                <button disabled={!this.state.authenticated}
+                    onClick={this.account}>Account</button>
             </p>
         </div>;
     }
